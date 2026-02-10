@@ -3,6 +3,7 @@ package nynu.cityEase.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,7 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Time: 13:23
  * Description: TODO
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "nynu.cityEase")
+@EnableAspectJAutoProxy
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);

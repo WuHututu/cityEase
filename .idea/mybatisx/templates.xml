@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="TemplatesSettings">
+    <option name="templateConfigs">
+      <TemplateContext>
+        <option name="generateConfig">
+          <GenerateConfig>
+            <option name="annotationType" value="MYBATIS_PLUS3" />
+            <option name="basePackage" value="" />
+            <option name="basePath" value="src/main/java" />
+            <option name="classNameStrategy" value="camel" />
+            <option name="encoding" value="UTF-8" />
+            <option name="extraClassSuffix" value="DO" />
+            <option name="ignoreFieldPrefix" value="" />
+            <option name="ignoreFieldSuffix" value="" />
+            <option name="ignoreTablePrefix" value="sys_,gov_,pms_" />
+            <option name="ignoreTableSuffix" value="" />
+            <option name="moduleName" value="cityEase-service" />
+            <option name="modulePath" value="$PROJECT_DIR$/cityEase-service" />
+            <option name="moduleUIInfoList">
+              <list />
+            </option>
+            <option name="needJdbcType" value="true" />
+            <option name="needSerializable" value="true" />
+            <option name="needsComment" value="true" />
+            <option name="needsModel" value="true" />
+            <option name="relativePackage" value="" />
+            <option name="superClass" value="nynu.cityEase.api.entity.BaseDO" />
+            <option name="tableUIInfoList">
+              <list>
+                <TableUIInfo>
+                  <option name="className" value="PublicAffairs" />
+                  <option name="tableName" value="gov_public_affairs" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="PublicArea" />
+                  <option name="tableName" value="pms_public_area" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="RepairOrder" />
+                  <option name="tableName" value="pms_repair_order" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="Room" />
+                  <option name="tableName" value="pms_room" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserRoomRel" />
+                  <option name="tableName" value="pms_user_room_rel" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="User" />
+                  <option name="tableName" value="sys_user" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserInfo" />
+                  <option name="tableName" value="sys_user_info" />
+                </TableUIInfo>
+              </list>
+            </option>
+            <option name="templatesName" value="mybatis-plus3" />
+            <option name="useActualColumnAnnotationInject" value="true" />
+            <option name="useActualColumns" value="true" />
+            <option name="useLombokPlugin" value="true" />
+          </GenerateConfig>
+        </option>
+        <option name="moduleName" value="cityEase-service" />
+        <option name="projectPath" value="$PROJECT_DIR$" />
+        <option name="templateName" value="mybatis-plus3" />
+      </TemplateContext>
+    </option>
+  </component>
+</project>

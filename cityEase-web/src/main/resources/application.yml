@@ -3,6 +3,29 @@ server:
 
 #数据库配置
 database:
-  name: cityEase
+  name: city_ease
   username: root
   password: root
+
+cache:
+  redis:
+    host: 192.168.200.147
+    port: 6379
+#    password:
+    timeout: 10s
+
+
+# mybatis 相关统一配置
+mybatis-plus:
+  configuration:
+    #开启下划线转驼峰
+    map-underscore-to-camel-case: true
+
+security:
+  salt: city_ease # 密码加盐, 更安全的做法是每个用户的密码使用独立的盐，并将其保存在用户表中
+  salt-index: 3 # 盐插入的位置
+
+spring:
+  config:
+    import: application-dal.yml,application-login.yml
+
