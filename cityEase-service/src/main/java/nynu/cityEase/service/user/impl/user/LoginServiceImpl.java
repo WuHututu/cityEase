@@ -1,4 +1,4 @@
-package nynu.cityEase.service.user.service.user;
+package nynu.cityEase.service.user.impl.user;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
@@ -7,7 +7,7 @@ import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.service.user.ILoginService;
 import nynu.cityEase.service.user.repository.dao.UserDao;
 import nynu.cityEase.service.user.repository.entity.UserDO;
-import nynu.cityEase.service.user.service.help.UserInfoEncoder;
+import nynu.cityEase.service.user.help.UserInfoEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

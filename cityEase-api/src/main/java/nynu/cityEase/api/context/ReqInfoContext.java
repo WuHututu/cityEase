@@ -61,7 +61,7 @@ public class ReqInfoContext {
         /**
          * 登录的会话
          */
-        private String session;
+        private String token;
 
         /**
          * 用户id
@@ -72,7 +72,7 @@ public class ReqInfoContext {
          */
         private BaseUserInfoDTO user;
         /**
-         * 消息数量
+         * 未读消息数量
          */
         private Integer msgNum;
 
@@ -85,7 +85,7 @@ public class ReqInfoContext {
 
         @Override
         public String getName() {
-            return session;
+            return token;
         }
     }
 }

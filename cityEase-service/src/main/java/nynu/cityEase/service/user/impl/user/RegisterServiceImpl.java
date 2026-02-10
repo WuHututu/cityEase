@@ -1,4 +1,4 @@
-package nynu.cityEase.service.user.service.user;
+package nynu.cityEase.service.user.impl.user;
 
 import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.StatusEnum;
@@ -7,9 +7,8 @@ import nynu.cityEase.service.user.IRegisterService;
 import nynu.cityEase.service.user.repository.dao.UserDao;
 import nynu.cityEase.service.user.repository.entity.UserDO;
 import nynu.cityEase.service.user.repository.entity.UserInfoDO;
-import nynu.cityEase.service.user.repository.mapper.UserMapper;
-import nynu.cityEase.service.user.service.help.UserInfoEncoder;
-import nynu.cityEase.service.user.service.help.UserRandomGenHelper;
+import nynu.cityEase.service.user.help.UserInfoEncoder;
+import nynu.cityEase.service.user.help.UserRandomGenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

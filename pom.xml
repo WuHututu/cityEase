@@ -34,6 +34,7 @@
         <mybatis-plus-generator.version>3.5.2</mybatis-plus-generator.version>
         <mysql.version>8.0.33</mysql.version>
         <knife4j.version>4.5.0</knife4j.version>
+        <qrcode-plugin.version>3.0.0</qrcode-plugin.version>
 
     </properties>
 
@@ -103,6 +104,11 @@
                 <groupId>com.github.xiaoymin</groupId>
                 <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.liuyueyi.media</groupId>
+                <artifactId>qrcode-plugin</artifactId>
+                <version>${qrcode-plugin.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

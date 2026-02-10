@@ -1,6 +1,6 @@
 package nynu.cityease.encoder;
 
-import nynu.cityEase.service.user.service.help.UserInfoEncoder;
+import nynu.cityEase.service.user.help.UserInfoEncoder;
 import java.lang.reflect.Field;
 
 public class MD5Encoder {

@@ -72,8 +72,15 @@ public class UserInfoDO extends BaseDO implements Serializable {
      * 用户的ip信息
      */
     @TableField(value = "ip")
-    private String ip;
+    private IpInfo ip;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
+    public IpInfo getIp() {
+        if (ip == null) {
+            ip = new IpInfo();
+        }
+        return ip;
+    }
 }

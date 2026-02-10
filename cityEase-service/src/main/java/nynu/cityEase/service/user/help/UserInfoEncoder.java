@@ -1,4 +1,4 @@
-package nynu.cityEase.service.user.service.help;
+package nynu.cityEase.service.user.help;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

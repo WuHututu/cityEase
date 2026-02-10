@@ -52,4 +52,8 @@ public class UserDao extends ServiceImpl<UserInfoMapper, UserInfoDO> {
             userInfoMapper.updateById(userInfoDO);
         }
     }
+
+    public UserInfoDO getByUserId(Long userId){
+        return userInfoMapper.selectById(userId);
+    }
 }

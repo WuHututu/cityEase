@@ -1,4 +1,4 @@
-package nynu.cityEase.service.user.service.help;
+package nynu.cityEase.service.user.help;
 
 import java.util.Random;
 
