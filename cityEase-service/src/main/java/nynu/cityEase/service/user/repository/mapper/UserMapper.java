@@ -2,7 +2,7 @@ package nynu.cityEase.service.user.repository.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import nynu.cityEase.service.user.repository.entity.UserDO;
-import org.springframework.stereotype.Repository;
+
 
 /**
  * Created with IntelliJ IDEA.

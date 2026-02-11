@@ -4,6 +4,8 @@ import lombok.Getter;
 import nynu.cityEase.api.vo.Status;
 import nynu.cityEase.api.vo.constants.StatusEnum;
 
+import java.util.Arrays;
+
 /**
  * Created with IntelliJ IDEA.
  * User: 90924
@@ -18,11 +20,15 @@ public class CommunityException extends RuntimeException {
     @Getter
     Status status;
 
-    public CommunityException(Status status) {this.status = status;}
+    public CommunityException(Status status) {
+        super(status.getMsg());
+        this.status = status;}
 
     public CommunityException(int code, String msg) {
+        super(msg);
         this.status = Status.newStatus(code, msg);
     }
 
-    public CommunityException(StatusEnum statusEnum, Object... args) {this.status = Status.newStatus(statusEnum, args);}
+    public CommunityException(StatusEnum statusEnum, Object... args) {
+        this(Status.newStatus(statusEnum, args));}
 }

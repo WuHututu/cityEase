@@ -12,4 +12,9 @@ public class RedisKeyConstants {
      * 判定离线的阈值（例如 30 分钟无操作视为离线）
      */
     public static final long OFFLINE_THRESHOLD_MILLIS = 30 * 60 * 1000L;
+
+    /**
+     * 社区设施树状结构
+     */
+    public static final String PUBLIC_AREA_TREE_KEY="pms:area:tree";
 }

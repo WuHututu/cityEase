@@ -7,4 +7,6 @@
            extension="" presentableText="" tooltipTitle="" icon="" textColor="" backgroundColor=""/>
      <tree path="/cityEase-service/src/main/java/nynu/cityEase/service/user/repository/entity/IpInfo.java"
            title="Ip字段结构"/>
+     <tree path="/cityEase-service/src/main/java/nynu/cityEase/service/pms" title="社区房产、设施信息"/>
+     <tree path="/cityEase-web/src/main/resources/data/ip2region.xdb" title="离线IP库"/>
  </trees>

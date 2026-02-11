@@ -28,4 +28,10 @@ public class BaseDO {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除: 0-未删, 1-已删
+     */
+    @TableField(value = "is_deleted")
+    private Integer isDeleted;
 }

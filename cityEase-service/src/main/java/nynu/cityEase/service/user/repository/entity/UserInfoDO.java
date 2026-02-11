@@ -2,9 +2,12 @@ package nynu.cityEase.service.user.repository.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -12,11 +15,12 @@ import nynu.cityEase.api.entity.BaseDO;
 
 /**
  * 用户资料表
+ *
  * @author 90924
  * @TableName sys_user_info
  */
 @EqualsAndHashCode(callSuper = true)
-@TableName(value ="sys_user_info")
+@TableName(value = "sys_user_info", autoResultMap = true)
 @Data
 @Accessors(chain = true)
 public class UserInfoDO extends BaseDO implements Serializable {
@@ -56,11 +60,6 @@ public class UserInfoDO extends BaseDO implements Serializable {
     @TableField(value = "birthday")
     private LocalDateTime birthday;
 
-    /**
-     * 逻辑删除: 0-未删, 1-已删
-     */
-    @TableField(value = "is_deleted")
-    private Integer isDeleted;
 
     /**
      * 0 普通用户 1 超管
@@ -71,7 +70,7 @@ public class UserInfoDO extends BaseDO implements Serializable {
     /**
      * 用户的ip信息
      */
-    @TableField(value = "ip")
+    @TableField(value = "ip",typeHandler = JacksonTypeHandler.class)
     private IpInfo ip;
 
     @TableField(exist = false)

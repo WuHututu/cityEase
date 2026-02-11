@@ -19,6 +19,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 // 拦截所有路由
                 .addPathPatterns("/**")
                 .excludePathPatterns(
+                        "/error",
                         // 排除登录接口
                         "/login",
                         // 排除注册接口

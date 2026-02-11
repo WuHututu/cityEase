@@ -13,5 +13,8 @@ import nynu.cityEase.api.vo.constants.StatusEnum;
  */
 
 public class ExceptionUtil {
-    public static CommunityException of(StatusEnum statusEnum, Object... args) {return new CommunityException(statusEnum, args);}
+    public static CommunityException of(StatusEnum statusEnum, Object... args) {
+        // 处理可能为null的args参数，避免String.format出现异常
+        return new CommunityException(statusEnum, args);
+    }
 }

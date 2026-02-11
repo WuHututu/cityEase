@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import nynu.cityEase.api.enums.YesOrNoEnum;
-import nynu.cityEase.api.exception.ExceptionUtil;
-import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.service.user.repository.entity.UserDO;
 import nynu.cityEase.service.user.repository.entity.UserInfoDO;
 import nynu.cityEase.service.user.repository.mapper.UserInfoMapper;
@@ -25,8 +23,8 @@ import javax.annotation.Resource;
 @Repository
 public class UserDao extends ServiceImpl<UserInfoMapper, UserInfoDO> {
     @Resource
-    UserMapper userMapper;
-    @Autowired
+    private UserMapper userMapper;
+    @Resource
     private UserInfoMapper userInfoMapper;
 
     public UserDO getUserByPhone(String phone) {
@@ -37,23 +35,25 @@ public class UserDao extends ServiceImpl<UserInfoMapper, UserInfoDO> {
         return userMapper.selectOne(qw);
     }
 
-    public void saveUser(UserDO userDO){
-        if (userDO.getId()==null){
+    public void saveUser(UserDO userDO) {
+        if (userDO.getId() == null) {
             userMapper.insert(userDO);
-        }else {
+        } else {
             userMapper.updateById(userDO);
         }
     }
 
-    public void saveUserInfo(UserInfoDO userInfoDO){
-        if (userInfoDO.getId()==null){
+    public void saveUserInfo(UserInfoDO userInfoDO) {
+        if (userInfoDO.getId() == null) {
             userInfoMapper.insert(userInfoDO);
-        }else {
+        } else {
             userInfoMapper.updateById(userInfoDO);
         }
     }
 
-    public UserInfoDO getByUserId(Long userId){
-        return userInfoMapper.selectById(userId);
+    public UserInfoDO getByUserId(Long userId) {
+        LambdaQueryWrapper<UserInfoDO> qw = Wrappers.lambdaQuery();
+        qw.eq(UserInfoDO::getUserId, userId);
+        return userInfoMapper.selectOne(qw);
     }
 }

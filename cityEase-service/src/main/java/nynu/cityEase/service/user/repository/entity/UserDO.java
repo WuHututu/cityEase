@@ -36,11 +36,6 @@ public class UserDO extends BaseDO implements Serializable {
     @TableField(value = "status")
     private Integer status;
 
-    /**
-     * 逻辑删除: 0-未删, 1-已删
-     */
-    @TableField(value = "is_deleted")
-    private Integer isDeleted;
 
     /**
      * 登录方式: 0-微信登录，1-手机号密码登录
