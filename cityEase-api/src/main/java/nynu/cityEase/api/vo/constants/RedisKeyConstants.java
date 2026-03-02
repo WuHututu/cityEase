@@ -22,4 +22,9 @@ public class RedisKeyConstants {
      * 社区公告详情
      */
     public static final String NOTICE_DETAIL_KEY= "cityease:notice:detail:";
+
+    /**
+     * 后台首页核心指标数据
+     */
+    public static final String DASHBOARD_METRICS_KEY = "cityease:dashboard:metrics";
 }

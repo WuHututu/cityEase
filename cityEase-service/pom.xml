@@ -67,5 +67,12 @@
         </dependency>
         <!--        hutool-->
 
+        <!--        xxl-job-->
+        <dependency>
+            <groupId>com.xuxueli</groupId>
+            <artifactId>xxl-job-core</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+        <!--        xxl-job-->
     </dependencies>
 </project>

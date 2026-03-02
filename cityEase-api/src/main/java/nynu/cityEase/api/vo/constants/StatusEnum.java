@@ -81,7 +81,12 @@ public enum StatusEnum {
 //    USER_STAR_REPEAT(400_404_002, "星球编号:%s 已经绑定了，请添加二哥微信 qing_gee 加快审核，或切换到登录窗口"),
     PHONE_PWD_ERROR(400_500_002, "手机号or密码错误"),
     LOGIN_PHONE_BLANK(400_500_003, "手机号不可为空"),
-    LOGIN_PWD_BLANK(400_500_004, "密码不可为空");
+    LOGIN_PWD_BLANK(400_500_004, "密码不可为空"),
+
+    // --------------------------------
+    //执行异常 （暂定）
+    DATA_INITIALIZE_ERROR(500_404_001, "数据正在初始化，请稍后再试");
+
 
     private int code;
 
