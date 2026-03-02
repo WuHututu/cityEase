@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping
-public class PmsRestController{
+public class PmsSettingRestController {
     @Autowired
     IPmsPublicAreaService publicAreaService;
 

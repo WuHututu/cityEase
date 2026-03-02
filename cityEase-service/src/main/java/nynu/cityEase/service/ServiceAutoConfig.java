@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ComponentScan("nynu.cityEase.service")
 @MapperScan(basePackages = {
-        "nynu.cityEase.service.*.repository.mapper",
+        "nynu.cityEase.service.**.repository.mapper",
 })
 public class ServiceAutoConfig {
 

@@ -17,4 +17,9 @@ public class RedisKeyConstants {
      * 社区设施树状结构
      */
     public static final String PUBLIC_AREA_TREE_KEY="pms:area:tree";
+
+    /**
+     * 社区公告详情
+     */
+    public static final String NOTICE_DETAIL_KEY= "cityease:notice:detail:";
 }

@@ -59,16 +59,32 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addArea(PublicAreaReq req) {
+        // 1. 父级关系与层级架构校验 (核心优化点)
         if (req.getParentId() != null && req.getParentId() != 0L) {
+            // 有父节点的情况
             PublicAreaDO parent = pmsDao.getById(req.getParentId());
             if (parent == null) {
                 throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "父级区域不存在");
             }
+
+            // ★ 灵活且严格的层级规则：父节点的级别(数字)必须小于当前节点的级别
+            // 例如：当前是楼栋(3)，父亲可以是分期(2)或者小区(1)，但不能是单元(4)或楼栋(3)
+            if (parent.getLevel() >= req.getLevel()) {
+                throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "架构层级错误：父节点层级必须高于当前节点");
+            }
+        } else {
+            // ★ 无父节点(顶级节点)的情况：强制必须是“小区”级别 (假设字典里小区的值是1)
+            if (req.getLevel() != 1) {
+                throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "顶级区域的层级必须是【小区】");
+            }
         }
+
+        // 2. 保存数据
         PublicAreaDO pdo = new PublicAreaDO();
         BeanUtils.copyProperties(req, pdo);
         pmsDao.saveOrUpdate(pdo);
 
+        // 3. 清理缓存，保证前端获取最新树结构
         redisTemplate.delete(RedisKeyConstants.PUBLIC_AREA_TREE_KEY);
     }
 
@@ -122,4 +138,34 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
 
         return rootList;
     }
+
+    @Override
+    public String getFullAreaName(Long areaId) {
+        if (areaId == null) {
+            return "";
+        }
+
+        StringBuilder fullName = new StringBuilder();
+        Long currentId = areaId;
+
+        // 向上溯源，直到 parentId = 0 或者找不到为止 (加个计数器防止死循环)
+        int maxDepth = 10;
+        while (currentId != null && currentId != 0L && maxDepth-- > 0) {
+            PublicAreaDO area = pmsDao.getById(currentId);
+            if (area == null) {
+                break;
+            }
+
+            // 往头部插入，因为是从底层往上查的
+            if (!fullName.isEmpty()) {
+                fullName.insert(0, "-");
+            }
+            fullName.insert(0, area.getName());
+
+            currentId = area.getParentId();
+        }
+        return fullName.toString();
+    }
+
+
 }

@@ -23,4 +23,11 @@ public interface IPmsPublicAreaService {
     void addArea(PublicAreaReq req);
 
     void removeArea(Long areaId);
+
+    /**
+     * 根据底层节点ID，向上溯源获取完整的区域名称
+     * @param areaId 底层区域ID (如单元ID)
+     * @return 完整名称 (如: 江南星城-1号楼-1单元)
+     */
+    String getFullAreaName(Long areaId);
 }
