@@ -74,5 +74,13 @@
             <version>2.4.1</version>
         </dependency>
         <!--        xxl-job-->
+
+        <!--        mq-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <!--        mq-->
+
     </dependencies>
 </project>
