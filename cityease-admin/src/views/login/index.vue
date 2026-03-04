@@ -98,7 +98,7 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
         })
 
         // 假设后端返回的数据中包含 token 字段
-        localStorage.setItem('satoken', res.token)
+        localStorage.setItem('satoken', res)
 
         ElMessage.success('登录成功，欢迎回来')
         // 跳转到大屏首页

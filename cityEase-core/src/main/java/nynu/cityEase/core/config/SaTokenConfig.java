@@ -21,7 +21,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/error",
                         // 排除登录接口
-                        "/admin/login",
+                        "/login",
                         // 排除注册接口
                         "/register",
                         // 放行 Knife4j (Swagger) 接口文档的静态资源，防止文档打不开

@@ -36,16 +36,13 @@ public class LoginRestController {
      */
     @PostMapping(path = "/login")
     @MdcDot
-    public ResVo<String> login(
-            @ApiParam("手机号") @RequestParam(name = "phone") String phone,
-            @ApiParam("密码") @RequestParam(name = "password") String password
-    ) {
-        try{
-            return ResVo.ok(loginService.loginByPhonePwd(phone,password));
-        }catch (CommunityException e){
+    public ResVo<String> login(@RequestBody PhonePwdLoginReq req) {
+        try {
+            // 从实体类中获取 phone 和 password
+            return ResVo.ok(loginService.loginByPhonePwd(req.getPhone(), req.getPassword()));
+        } catch (CommunityException e) {
             return ResVo.fail(e.getStatus());
         }
-
     }
 
     /**
