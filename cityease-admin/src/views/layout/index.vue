@@ -46,8 +46,8 @@
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <span class="user-dropdown">
-              <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-              <span class="username">管理员</span>
+              <el-avatar :size="32" :src="userInfo.avatar" />
+              <span class="username">{{ userInfo.userName }}</span>
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </span>
             <template #dropdown>
@@ -62,7 +62,11 @@
 
       <el-main class="main-content">
         <div class="content-box">
-          <h2 style="color: #cbd5e1; text-align: center; margin-top: 100px;">这里是内容区，马上接入Dashboard数据</h2>
+          <router-view v-slot="{ Component }">
+            <transition name="fade-transform" mode="out-in">
+              <component :is="Component" :key="route.path" />
+            </transition>
+          </router-view>
         </div>
       </el-main>
     </el-container>
@@ -70,14 +74,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Platform, DataLine, Tools, Money, Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+// 引入您封装好的 request
+import request from '@/utils/request'
 
 const route = useRoute()
 const router = useRouter()
 const isCollapse = ref(false)
+
+// 响应式数据：存储用户信息，给定默认值防闪烁
+const userInfo = ref({
+  userName: '加载中...',
+  avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+})
+
+// 初始化时获取后端用户信息
+const fetchUserInfo = async () => {
+  try {
+    // 调用后端 AdminUserController 里的 /admin/user/info 接口
+    // request 拦截器已经处理了状态码 0 并剥离了外层 res.data
+    const data: any = await request.get('/admin/user/info')
+    if (data) {
+      userInfo.value.userName = data.userName
+      userInfo.value.avatar = data.avatar
+    }
+  } catch (error) {
+    console.error('获取用户信息失败', error)
+  }
+}
+
+onMounted(() => {
+  fetchUserInfo()
+})
 
 const handleCommand = (command: string) => {
   if (command === 'logout') {
@@ -85,23 +116,44 @@ const handleCommand = (command: string) => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
-    }).then(() => {
-      localStorage.removeItem('satoken')
-      ElMessage.success('已安全退出')
-      router.push('/login')
+    }).then(async () => {
+      try {
+        // 先调用后端接口注销 Sa-Token
+        await request.post('/logout')
+      } catch (error) {
+        console.warn('后端注销失败，但前端将继续清理本地缓存', error)
+      } finally {
+        // 无论后端是否成功响应，前端都要清理凭证并跳转
+        localStorage.removeItem('satoken')
+        ElMessage.success('已安全退出')
+        router.push('/login')
+      }
     }).catch(() => {})
   }
 }
 </script>
 
 <style scoped lang="scss">
+/* 页面切换的过渡动画 */
+.fade-transform-leave-active,
+.fade-transform-enter-active {
+  transition: all 0.3s;
+}
+.fade-transform-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.fade-transform-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
 .layout-container {
   height: 100vh;
   width: 100vw;
-  background-color: #0f172a; /* 整体深色背景 */
+  background-color: #0f172a;
 }
 
-/* 左侧边栏 */
 .aside-menu {
   background-color: #0f172a;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
@@ -134,7 +186,6 @@ const handleCommand = (command: string) => {
   }
 }
 
-/* 顶部导航 */
 .header {
   height: 60px;
   background-color: rgba(30, 41, 59, 0.8);
@@ -157,7 +208,6 @@ const handleCommand = (command: string) => {
       &:hover { color: #fff; }
     }
 
-    /* 深度修改面包屑文字颜色以适配暗黑主题 */
     :deep(.el-breadcrumb__inner) { color: #94a3b8 !important; }
     :deep(.el-breadcrumb__inner.is-link:hover) { color: #1890ff !important; }
   }
@@ -174,7 +224,6 @@ const handleCommand = (command: string) => {
   }
 }
 
-/* 主内容区 */
 .main-content {
   padding: 20px;
   background-color: #0f172a;

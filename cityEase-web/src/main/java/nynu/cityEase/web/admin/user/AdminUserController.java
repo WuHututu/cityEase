@@ -1,6 +1,8 @@
 package nynu.cityEase.web.admin.user;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -11,7 +13,10 @@ import nynu.cityEase.service.user.repository.entity.UserInfoDO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/admin/user")
@@ -24,11 +29,24 @@ public class AdminUserController {
     @Autowired
     private UserDao userDao;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @GetMapping("/info")
     @ApiOperation("获取当前登录管理员的信息")
     public ResVo<CurrentUserInfoVO> getCurrentUserInfo() {
         long userId = StpUtil.getLoginIdAsLong();
+        String userKey = "user:info:" + userId;
 
+        // 1. 优先从 Redis 缓存中读取
+        String cachedInfo = stringRedisTemplate.opsForValue().get(userKey);
+        if (StrUtil.isNotBlank(cachedInfo)) {
+            // 如果缓存存在，直接反序列化返回
+            CurrentUserInfoVO vo = JSONUtil.toBean(cachedInfo, CurrentUserInfoVO.class);
+            return ResVo.ok(vo);
+        }
+
+        // 2. 缓存中没有，查询数据库
         UserInfoDO userInfo = userDao.getByUserId(userId);
 
         CurrentUserInfoVO vo = new CurrentUserInfoVO();
@@ -50,6 +68,9 @@ public class AdminUserController {
             vo.setAvatar("https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png");
         }
 
+        // 3. 将组装好的最新数据存入 Redis，并设置一个过期时间（比如 7 天），防止死缓存占用太多内存
+        stringRedisTemplate.opsForValue().set(userKey, JSONUtil.toJsonStr(vo), 30, TimeUnit.DAYS);
+
         return ResVo.ok(vo);
     }
 
@@ -60,7 +81,7 @@ public class AdminUserController {
 
         long userId = StpUtil.getLoginIdAsLong();
 
-        // 核心修正：先查出原本的资料
+        // 先查出原本的资料
         UserInfoDO userInfo = userDao.getByUserId(userId);
         if (userInfo == null) {
             // 如果连资料都没有，就新建一个关联
@@ -75,6 +96,12 @@ public class AdminUserController {
         // 调用你写好的 saveUserInfo 进行插入或更新
         userDao.saveUserInfo(userInfo);
         log.info("用户 [{}] 成功更新了头像: {}", userId, avatarUrl);
+
+        // ================== 核心新增 ==================
+        // 数据更新后，必须删除 Redis 中的缓存，这样下次调用 /info 接口时才会重新查库并存入最新的头像
+        String userKey = "user:info:" + userId;
+        stringRedisTemplate.delete(userKey);
+        // ==============================================
 
         return ResVo.ok("头像更新成功");
     }

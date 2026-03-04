@@ -27,4 +27,5 @@ public class RedisKeyConstants {
      * 后台首页核心指标数据
      */
     public static final String DASHBOARD_METRICS_KEY = "cityease:dashboard:metrics";
+
 }

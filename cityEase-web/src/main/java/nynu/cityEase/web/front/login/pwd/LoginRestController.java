@@ -9,7 +9,9 @@ import nynu.cityEase.api.vo.user.PhonePwdLoginReq;
 import nynu.cityEase.core.mdc.MdcDot;
 import nynu.cityEase.service.user.ILoginService;
 import nynu.cityEase.service.user.IRegisterService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -31,6 +33,9 @@ public class LoginRestController {
     @Resource
     @Qualifier("RegisterServiceImpl")
     IRegisterService registerService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
 
     /**
@@ -63,7 +68,11 @@ public class LoginRestController {
     @PostMapping(path = "/logout")
     @ApiOperation("退出登录")
     public ResVo<String> logout() {
-        // StpUtil.logout() 会自动获取当前请求头里的 Token，并在 Redis 里将其销毁
+        long userId = StpUtil.getLoginIdAsLong();
+
+        String userKey = "user:info:" + userId;
+        stringRedisTemplate.delete(userKey);
+
         StpUtil.logout();
         return ResVo.ok("退出成功");
     }

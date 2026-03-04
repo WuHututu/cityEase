@@ -62,7 +62,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Platform } from '@element-plus/icons-vue'
-import request from '@/utils/request.ts'
+import request from '@/utils/request'
 
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()

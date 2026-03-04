@@ -8,7 +8,7 @@ export interface ResVo<T = any> {
         code: number;
         msg: string;
     };
-    data: T;
+    result: T;
 }
 
 // 创建 axios 实例
@@ -24,8 +24,10 @@ service.interceptors.request.use(
 
         // 从 localStorage 获取登录时存入的 Sa-Token
         const token = localStorage.getItem('satoken');
-        if (token) {
+        if (token && token !== 'undefined') {
             // 自动携带 Token 给后端
+            config.headers['Authorization'] = token;
+            // TODO 实际多余，兜底
             config.headers['satoken'] = token;
         }
 
@@ -44,7 +46,7 @@ service.interceptors.response.use(
         // 状态码为 0 代表业务处理成功 (对应后端 StatusEnum.SUCCESS)
         if (res.status.code === 0) {
             // 自动剥离外壳，组件里拿到直接就是 data 数据
-            return res.data as any;
+            return res.result as any;
         }
 
         // 状态码为 401/403 代表 Token 过期或未登录
