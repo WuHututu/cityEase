@@ -12,4 +12,7 @@
      <tree path="/cityEase-core/src/main/java/nynu/cityEase/core/config/JacksonConfig.java"
            title="前后端雪花ID精度处理"/>
     <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/constants/StatusEnum.java" title="异常枚举"/>
+    <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/constants/MqConstants.java" title="队列名称常量"/>
+    <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/system/NotifyMsgDTO.java" title="消息传递体"
+          extension="" presentableText="" tooltipTitle="" icon="" textColor="" backgroundColor=""/>
 </trees>

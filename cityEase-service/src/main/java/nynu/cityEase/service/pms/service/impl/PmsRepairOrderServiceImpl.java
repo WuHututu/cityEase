@@ -6,9 +6,11 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.api.vo.pms.*;
+import nynu.cityEase.api.vo.system.NotifyMsgDTO;
 import nynu.cityEase.service.pms.repository.entity.RepairOrderDO;
 import nynu.cityEase.service.pms.repository.entity.RoomDO;
 import nynu.cityEase.service.pms.repository.entity.UserRoomRelDO;
@@ -18,11 +20,13 @@ import nynu.cityEase.service.pms.repository.mapper.UserRoomRelMapper;
 import nynu.cityEase.service.pms.service.IPmsPublicAreaService;
 import nynu.cityEase.service.pms.service.IPmsRepairOrderService;
 import nynu.cityEase.service.user.repository.dao.UserDao;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, RepairOrderDO> implements IPmsRepairOrderService {
 
     @Autowired
@@ -38,6 +42,9 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
     // 注入公共区域Service获取拼接完整地址
     @Autowired
     private IPmsPublicAreaService publicAreaService;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -100,8 +107,23 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
         // 状态变更为 1-处理中
         orderDO.setStatus(1);
         orderDO.setHandlerId(req.getHandlerId());
-
         this.updateById(orderDO);
+
+        // 核心增强：异步发送派单通知给维修师傅
+        NotifyMsgDTO notifyMsg = new NotifyMsgDTO();
+        notifyMsg.setReceiveUserId(req.getHandlerId());
+        notifyMsg.setTitle("新工单派发提醒");
+        notifyMsg.setContent("您有一个新的报修工单待处理，单号：" + orderDO.getId());
+        notifyMsg.setRelatedBizId(String.valueOf(orderDO.getId()));
+        notifyMsg.setNotifyType("REPAIR_DISPATCH");
+
+        rabbitTemplate.convertAndSend(
+                nynu.cityEase.api.vo.constants.MqConstants.NOTIFY_EXCHANGE,
+                nynu.cityEase.api.vo.constants.MqConstants.NOTIFY_ROUTING_KEY,
+                notifyMsg
+        );
+
+        log.info("工单 {} 派发成功，已投递异步通知消息", orderDO.getId());
     }
 
     @Override
