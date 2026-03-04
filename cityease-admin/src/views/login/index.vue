@@ -18,9 +18,9 @@
           :rules="rules"
           class="login-form"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="phone">
           <el-input
-              v-model="loginForm.username"
+              v-model="loginForm.phone"
               placeholder="管理员账号"
               :prefix-icon="User"
               size="large"
@@ -69,12 +69,12 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 const loginForm = reactive({
-  username: '',
+  phone: '',
   password: ''
 })
 
 const rules = reactive<FormRules>({
-  username: [
+  phone: [
     { required: true, message: '请输入管理员账号', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
@@ -93,7 +93,7 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
       try {
         // 调用后端登录接口，注意替换为你实际的后台登录接口路径
         const res: any = await request.post('/login', {
-          username: loginForm.username,
+          phone: loginForm.phone,
           password: loginForm.password
         })
 
