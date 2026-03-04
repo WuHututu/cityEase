@@ -7,6 +7,7 @@ import nynu.cityEase.service.user.IUserService;
 import nynu.cityEase.service.user.converter.UserConverter;
 import nynu.cityEase.service.user.repository.dao.UserDao;
 import nynu.cityEase.service.user.repository.entity.IpInfo;
+import nynu.cityEase.service.user.repository.entity.UserDO;
 import nynu.cityEase.service.user.repository.entity.UserInfoDO;
 import org.springframework.stereotype.Service;
 
@@ -56,5 +57,17 @@ public class UserServiceImpl implements IUserService {
         }
 
         return UserConverter.toDTO(user);
+    }
+
+    @Override
+    public UserDO getById(Long userId) {
+        return userDao.getUserById(userId);
+    }
+
+    @Override
+    public boolean updateById(UserDO userDO) {
+        // UserDao 的 saveUser 内部已经做了判断：如果有 ID 则执行 updateById
+        userDao.saveUser(userDO);
+        return true;
     }
 }

@@ -56,4 +56,8 @@ public class UserDao extends ServiceImpl<UserInfoMapper, UserInfoDO> {
         qw.eq(UserInfoDO::getUserId, userId);
         return userInfoMapper.selectOne(qw);
     }
+
+    public UserDO getUserById(Long userId) {
+        return userMapper.selectById(userId);
+    }
 }

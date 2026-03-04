@@ -102,10 +102,10 @@ public class OSSUtils {
      * @param key 文件在OSS中的key
      * @return OSSObject对象，使用后需要关闭
      */
-    public com.aliyun.oss.model.OSSObject downloadFile(String key) {
-        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
-        return ossClient.getObject(bucketName, key);
-    }
+//    public com.aliyun.oss.model.OSSObject downloadFile(String key) {
+//        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+//        return ossClient.getObject(bucketName, key);
+//    }
 
     /**
      * 获取文件访问URL

@@ -1,5 +1,7 @@
 package nynu.cityEase.web.front.login.pwd;
 
+import cn.dev33.satoken.stp.StpUtil;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import nynu.cityEase.api.exception.CommunityException;
 import nynu.cityEase.api.vo.ResVo;
@@ -55,4 +57,14 @@ public class LoginRestController {
         return ResVo.ok(registerService.registerByPhoneAndPassword(req));
     }
 
+    /**
+     * 退出登录 (核心安全修复)
+     */
+    @PostMapping(path = "/logout")
+    @ApiOperation("退出登录")
+    public ResVo<String> logout() {
+        // StpUtil.logout() 会自动获取当前请求头里的 Token，并在 Redis 里将其销毁
+        StpUtil.logout();
+        return ResVo.ok("退出成功");
+    }
 }
