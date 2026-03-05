@@ -1,0 +1,13 @@
+sa-token:
+  # Token 名称 (前端放在 Header 里的 key，比如 Authorization: xxxx-xxxx)
+  token-name: Authorization
+  # Token 有效期 (单位秒)，-1 代表永久有效，2592000 代表 30 天
+  timeout: 2592000
+  # 允许并发登录 (true=允许，false=新登录挤掉旧登录)
+  is-concurrent: true
+  # 是否共享 Token (true=多个端共用一个Token，false=每次登录都返回新Token)
+  is-share: true
+  # Token 风格 (uuid, simple-uuid, random-32, random-64)
+  token-style: uuid
+  # 是否从 Cookie 中读取 Token (前后端分离建议 false，只读 Header)
+  is-read-cookie: false
