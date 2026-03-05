@@ -366,11 +366,6 @@ onMounted(() => {
       background-color: #161e2c !important;
     }
 
-
-    background-color: transparent;
-    --el-table-border-color: rgba(255, 255, 255, 0.05);
-    --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
-
     th.el-table__cell {
       background-color: rgba(15, 23, 42, 0.8) !important;
       color: #cbd5e1;
