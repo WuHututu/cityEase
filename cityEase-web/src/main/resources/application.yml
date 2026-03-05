@@ -63,7 +63,7 @@ aliyun:
   oss:
     bucket-name: wuhututu          # 存储桶名称
     endpoint: oss-cn-hangzhou.aliyuncs.com  # 地域Endpoint
-    access-key-id: LTAI5tR6HAyTHgSm16AKgqXQ      # 你的AccessKey ID
-    access-key-secret: algvnjMruQICyuiwsx0P01mmC3nT1O  # 你的AccessKey Secret
+    access-key-id:      # 你的AccessKey ID
+    access-key-secret:   # 你的AccessKey Secret
     file-host: wuhututu/       # 上传文件的基础路径
 
