@@ -9,6 +9,7 @@
             <el-option label="待派发" :value="0" />
             <el-option label="处理中" :value="1" />
             <el-option label="已完成" :value="2" />
+            <el-option label="已结单" :value="3" />
           </el-select>
         </el-form-item>
 
@@ -47,18 +48,21 @@
         <el-table-column prop="repairType" label="报修类型" width="120" />
         <el-table-column prop="description" label="问题描述" show-overflow-tooltip min-width="200" />
 
-        <el-table-column label="状态" prop="status" width="120">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">
-              {{ statusText(row.status) }}
-            </el-tag>
+        <el-table-column prop="status" label="状态" width="120" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.status === 0" type="danger" effect="dark">待派发</el-tag>
+            <el-tag v-else-if="scope.row.status === 1" type="warning" effect="dark">处理中</el-tag>
+            <el-tag v-else-if="scope.row.status === 2" type="success" effect="dark">已完成</el-tag>
+            <el-tag v-else-if="scope.row.status === 3" type="info" effect="dark">已结单</el-tag>
+            <el-tag v-else type="info">未知</el-tag>
           </template>
         </el-table-column>
 
 
+
         <el-table-column prop="createTime" label="报修时间" width="180" />
 
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="scope">
             <el-button
                 v-if="scope.row.status === 0"
@@ -69,16 +73,23 @@
             >
               派单
             </el-button>
+
             <el-button
+                v-if="scope.row.status === 1"
                 size="small"
-                type="info"
+                type="success"
                 plain
-                @click="viewDetail(scope.row)"
+                @click="openCompleteDialog(scope.row)"
             >
+              完成
+            </el-button>
+
+            <el-button size="small" type="info" plain @click="viewDetail(scope.row)">
               详情
             </el-button>
           </template>
         </el-table-column>
+
 
         <template #empty>
           <el-empty description="暂无报修工单数据" />
@@ -193,6 +204,65 @@
       <el-button @click="detailVisible = false">关闭</el-button>
     </template>
   </el-dialog>
+  <!-- 提交处理结果对话框 -->
+  <el-dialog
+      v-model="completeVisible"
+      title="提交处理结果"
+      width="560px"
+      :before-close="handleCloseCompleteDialog"
+  >
+    <el-form
+        ref="completeFormRef"
+        :model="completeForm"
+        :rules="completeRules"
+        label-width="100px"
+    >
+      <el-form-item label="处理结果" prop="handleResult">
+        <el-input
+            v-model="completeForm.handleResult"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入处理结果（必填）"
+        />
+      </el-form-item>
+
+      <el-form-item label="处理图片">
+        <div style="width: 100%">
+          <div
+              v-for="(url, idx) in completeForm.handleImages"
+              :key="idx"
+              style="display:flex; gap:8px; margin-bottom:8px; align-items:center;"
+          >
+            <el-input v-model="completeForm.handleImages[idx]" placeholder="图片URL（可选）" />
+            <el-button type="danger" plain @click="removeHandleImage(idx)">删除</el-button>
+          </div>
+
+          <el-button type="primary" plain @click="addHandleImage">新增一张</el-button>
+
+          <div v-if="completeForm.handleImages.length" style="margin-top: 10px">
+            <div style="margin-bottom: 6px; font-weight: 600">预览</div>
+            <el-image
+                v-for="(url, idx) in completeForm.handleImages.filter(u => u && u.trim())"
+                :key="'pv-'+idx"
+                :src="url"
+                style="width: 100px; height: 100px; margin-right: 8px"
+                fit="cover"
+                :preview-src-list="completeForm.handleImages.filter(u => u && u.trim())"
+                preview-teleported
+            />
+          </div>
+        </div>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="handleCloseCompleteDialog">取消</el-button>
+      <el-button type="success" :loading="completeSubmitting" @click="submitComplete">
+        确认提交
+      </el-button>
+    </template>
+  </el-dialog>
+
 
 
 </template>
@@ -204,6 +274,65 @@ import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useRoute } from 'vue-router'
+
+// --- 提交处理结果弹窗 ---
+const completeVisible = ref(false)
+const completeSubmitting = ref(false)
+const completeFormRef = ref<FormInstance>()
+const completeOrderId = ref<number | null>(null)
+
+const completeForm = reactive({
+  handleResult: '',
+  handleImages: [] as string[]
+})
+
+const completeRules = reactive<FormRules>({
+  handleResult: [{ required: true, message: '请输入处理结果', trigger: 'blur' }]
+})
+
+const openCompleteDialog = (row: any) => {
+  completeOrderId.value = row?.id ?? row?.orderId ?? null
+  completeVisible.value = true
+}
+
+const handleCloseCompleteDialog = () => {
+  completeVisible.value = false
+  completeFormRef.value?.resetFields()
+  completeForm.handleImages = []
+  completeOrderId.value = null
+}
+
+const addHandleImage = () => {
+  completeForm.handleImages.push('')
+}
+
+const removeHandleImage = (idx: number) => {
+  completeForm.handleImages.splice(idx, 1)
+}
+
+const submitComplete = async () => {
+  if (!completeFormRef.value) return
+  await completeFormRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    completeSubmitting.value = true
+    try {
+      await request.post('/admin/pms/repair/complete', {
+        orderId: completeOrderId.value,
+        handleResult: completeForm.handleResult,
+        handleImages: completeForm.handleImages
+            .map(s => s?.trim())
+            .filter(Boolean)
+      })
+      ElMessage.success('处理结果已提交')
+      handleCloseCompleteDialog()
+      fetchData()
+    } finally {
+      completeSubmitting.value = false
+    }
+  })
+}
+
 
 const route = useRoute()
 
