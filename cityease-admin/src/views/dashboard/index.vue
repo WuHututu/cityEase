@@ -98,12 +98,9 @@ interface DashboardMetrics {
 // 定义图表数据类型
 interface ChartDataVO {
   xAxisData: string[]
-  xaxisData: string[]  // 添加小写字段以匹配后端返回
-  series: Array<{
-    name: string
-    data: number[]
-  }>
+  series: Array<{ name: string; data: number[] }>
 }
+
 
 const router = useRouter()
 
@@ -151,34 +148,14 @@ const initChart = (chartData: any = null) => {
       // 兼容大小写不同的字段名
       xAxisData = chartData.xAxisData || chartData.xaxisData;
       
-      // 确保seriesData是正确格式
-      seriesData = chartData.series.map((seriesItem: any) => {
-        return {
-          name: seriesItem.name,
-          type: 'line',
-          smooth: true,
-          lineStyle: { 
-            color: seriesItem.name === '新增报修' ? '#1890ff' : '#00B96B', 
-            width: 3 
-          },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { 
-                offset: 0, 
-                color: seriesItem.name === '新增报修' ? 'rgba(24,144,255,0.3)' : 'rgba(0,185,107,0.3)' 
-              },
-              { 
-                offset: 1, 
-                color: seriesItem.name === '新增报修' ? 'rgba(24,144,255,0.05)' : 'rgba(0,185,107,0.05)' 
-              }
-            ])
-          },
-          itemStyle: { 
-            color: seriesItem.name === '新增报修' ? '#1890ff' : '#00B96B' 
-          },
-          data: seriesItem.data
-        }
-      });
+      seriesData = chartData.series.map((s: any, idx: number) => ({
+        name: s.name,
+        type: 'line',
+        smooth: true,
+        data: s.data,
+        // 可按 idx 选色
+      }))
+
     } else {
       // 如果没有数据，使用默认值
       xAxisData = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];

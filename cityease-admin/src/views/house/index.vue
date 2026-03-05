@@ -115,7 +115,7 @@ const tableData = ref<any[]>([])
 const fetchData = async () => {
   loading.value = true
   try {
-    const pageData: any = await request.post('/admin/pms/house/page', queryParams)
+    const pageData: any = await request.post('/admin/pms/house/page', { ...queryParams })
     tableData.value = pageData.records || []
     total.value = Number(pageData.total || 0)
   } catch (e) {
