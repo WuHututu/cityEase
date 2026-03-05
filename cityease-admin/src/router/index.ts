@@ -26,6 +26,12 @@ const routes: Array<RouteRecordRaw> = [
                 // 顺手把报修工单的路由也配上
                 component: () => import('@/views/repair/index.vue'),
                 meta: { title: '报修工单' }
+            },
+            {
+                path: 'house',
+                name: 'House',
+                component: () => import('@/views/house/index.vue'),
+                meta: { title: '房屋管理' }
             }
         ]
     },

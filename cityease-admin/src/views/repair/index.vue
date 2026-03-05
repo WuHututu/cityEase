@@ -1,34 +1,225 @@
+<template>
+  <div class="repair-container">
+    <!-- 顶部搜索区域 -->
+    <div class="search-wrapper">
+      <el-form :inline="true" :model="queryParams" class="search-form">
+        <el-form-item label="工单状态">
+          <!-- 修复：明确指定下拉框宽度，防止文字被遮挡 -->
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="custom-select" style="width: 160px;">
+            <el-option label="待派发" :value="0" />
+            <el-option label="处理中" :value="1" />
+            <el-option label="已完成" :value="2" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="报修类型">
+          <!-- 修复：改为下拉框，规范输入并支持模糊匹配 (此处用预设类型模拟) -->
+          <el-select v-model="queryParams.repairType" placeholder="请选择报修类型" clearable filterable style="width: 160px;">
+            <el-option v-for="item in repairTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
+          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <!-- 主体表格区域 -->
+    <div class="table-wrapper">
+      <el-table
+          v-loading="loading"
+          :data="tableData"
+          style="width: 100%"
+          class="custom-table"
+          header-row-class-name="custom-table-header"
+      >
+        <el-table-column prop="id" label="工单编号" width="100" align="center" />
+
+        <!-- 修复：使用插槽增加地址不显示的兜底排查 -->
+        <el-table-column label="房屋地址" min-width="180">
+          <template #default="scope">
+            {{ scope.row.fullAddress || '暂未绑定/未获取到' }}
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="repairType" label="报修类型" width="120" />
+        <el-table-column prop="description" label="问题描述" show-overflow-tooltip min-width="200" />
+
+        <el-table-column prop="status" label="状态" width="120" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.status === 0" type="danger" effect="dark">待派发</el-tag>
+            <el-tag v-else-if="scope.row.status === 1" type="warning" effect="dark">处理中</el-tag>
+            <el-tag v-else-if="scope.row.status === 2" type="success" effect="dark">已完成</el-tag>
+            <el-tag v-else type="info">未知</el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="createTime" label="报修时间" width="180" />
+
+        <el-table-column label="操作" width="180" fixed="right" align="center">
+          <template #default="scope">
+            <el-button
+                v-if="scope.row.status === 0"
+                size="small"
+                type="primary"
+                plain
+                @click="openDispatchDialog(scope.row)"
+            >
+              派单
+            </el-button>
+            <el-button
+                size="small"
+                type="info"
+                plain
+                @click="viewDetail(scope.row.id)"
+            >
+              详情
+            </el-button>
+          </template>
+        </el-table-column>
+
+        <template #empty>
+          <el-empty description="暂无报修工单数据" />
+        </template>
+      </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-container">
+        <el-pagination
+            v-model:current-page="queryParams.pageNo"
+            :page-size="queryParams.pageSize"
+            :background="true"
+            layout="prev, pager, jumper, next, ->, total"
+            :total="total"
+            @current-change="fetchData"
+        />
+      </div>
+    </div>
+
+    <!-- 派发工单对话框 -->
+    <el-dialog
+        v-model="dialogVisible"
+        title="工单派发"
+        width="400px"
+        :before-close="handleCloseDialog"
+        custom-class="dark-dialog"
+    >
+      <el-form
+          ref="dispatchFormRef"
+          :model="dispatchForm"
+          :rules="rules"
+          label-width="100px"
+      >
+        <el-form-item label="维修师傅" prop="handlerId">
+          <el-select v-model="dispatchForm.handlerId" placeholder="请选择指派的维修人员" style="width: 100%;">
+            <!-- 修复：动态渲染师傅列表 -->
+            <el-option
+                v-for="handler in handlerList"
+                :key="handler.id"
+                :label="handler.name"
+                :value="handler.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleCloseDialog">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitDispatch">
+            确认派单
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 // --- 搜索与分页状态 ---
 const loading = ref(false)
 const total = ref(0)
+
+// 从路由参数获取初始状态值
+const initialStatus = route.query.status ? Number(route.query.status) : null
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  status: null as number | null,
-  repairType: '' // 后端字段：报修类型（字典值）
+  status: initialStatus,
+  repairType: ''
 })
+
+// 预设报修类型选项
+const repairTypeOptions = ref([
+  { label: '水管维修', value: '水管维修' },
+  { label: '电路维修', value: '电路维修' },
+  { label: '门窗结构', value: '门窗结构' },
+  { label: '公共设施', value: '公共设施' },
+  { label: '其他类型', value: '其他类型' }
+])
+
 const tableData = ref<any[]>([])
+const handlerList = ref<any[]>([])
+
+// --- 获取动态师傅列表 ---
+const fetchHandlers = async () => {
+  try {
+    // 提示：此处暂时通过模拟数据，后续请对接真实后端接口，如 /admin/system/user/handlers
+    // const res: any = await request.get('/admin/system/user/handlers')
+    // handlerList.value = res.data || []
+
+    // 模拟后端返回的数据
+    handlerList.value = [
+      { id: 1001, name: '张师傅 (电工)' },
+      { id: 1002, name: '李师傅 (水管)' },
+      { id: 1003, name: '王师傅 (综合)' }
+    ]
+  } catch (error) {
+    console.error('获取维修师傅列表失败', error)
+  }
+}
 
 // --- 获取列表数据 ---
 const fetchData = async () => {
   loading.value = true
   try {
-    // 【修改点】: 真实接口请求。注意通常封装好的 request，返回的 res 就是外层解构后的数据。
-    // 如果后台是 ResVo<PageVo<T>>，这里获取分页列表数据应当是 res.data.records 或者是 res.records，视你的 request.ts 拦截器而定。
-    // 这里做了一个兼容性解构：
-    const res: any = await request.post('/admin/pms/repair/page', queryParams)
+    // 增加兼容性参数 (current, size)，解决后端如果是 MyBatis-Plus Page 默认分页解析不到页码的问题
+    const params = {
+      ...queryParams,
+      current: queryParams.pageNo,
+      size: queryParams.pageSize
+    }
 
-    // 如果拦截器剥离了 code/msg/status，直接返回了 data 对象：
+    const res: any = await request.post('/admin/pms/repair/page', params)
     const pageData = res.data ? res.data : res
-    tableData.value = pageData.records || []
-    total.value = pageData.total || 0
+    let records = pageData.records || []
+
+    // 修复：前端优先排序策略 (待派发 0 > 处理中 1 > 已完成 2)
+    // 注意：若涉及跨页排序，此逻辑必须移植到后端 SQL 中完成！
+    records.sort((a: any, b: any) => {
+      // 优先按照状态码升序
+      if (a.status !== b.status) {
+        return a.status - b.status
+      }
+      // 状态相同时，按照创建时间倒序排（越新的越靠前）
+      const timeA = a.createTime ? new Date(a.createTime).getTime() : 0
+      const timeB = b.createTime ? new Date(b.createTime).getTime() : 0
+      return timeB - timeA
+    })
+
+    tableData.value = records
+    total.value = parseInt(pageData.total) || 0
   } catch (error) {
     console.error('获取报修工单列表失败', error)
   } finally {
@@ -61,34 +252,30 @@ const rules = reactive<FormRules>({
   handlerId: [{ required: true, message: '必须选择一位维修师傅', trigger: 'change' }]
 })
 
-// 打开弹窗
 const openDispatchDialog = (row: any) => {
   currentOrderId.value = row.id
   dialogVisible.value = true
 }
 
-// 关闭弹窗清空数据
 const handleCloseDialog = () => {
   dialogVisible.value = false
   dispatchFormRef.value?.resetFields()
   currentOrderId.value = null
 }
 
-// 提交派单
 const submitDispatch = async () => {
   if (!dispatchFormRef.value) return
   await dispatchFormRef.value.validate(async (valid) => {
     if (valid) {
       submitting.value = true
       try {
-        // 请求后端派单接口 (会触发 RabbitMQ 消息发送给业主)
         await request.post('/admin/pms/repair/dispatch', {
           orderId: currentOrderId.value,
           handlerId: dispatchForm.handlerId
         })
-        ElMessage.success('派单成功！已通过消息队列异步通知业主。')
+        ElMessage.success('派单成功！已通过消息队列异步通知维修人员。')
         handleCloseDialog()
-        fetchData() // 刷新列表，状态将变更为“处理中”
+        fetchData()
       } catch (error) {
         // 异常已由 axios 拦截器捕获
       } finally {
@@ -98,14 +285,142 @@ const submitDispatch = async () => {
   })
 }
 
-// 查看详情 (预留拓展)
 const viewDetail = (id: number) => {
   ElMessage.info(`预留功能：即将跳转到工单 ${id} 的详情追踪页`)
 }
 
-// 页面挂载时初始化数据
 onMounted(() => {
-  // 放开真实的数据拉取！
+  fetchHandlers()
   fetchData()
 })
 </script>
+
+<style scoped lang="scss">
+.repair-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 搜索区域暗黑风格定制 */
+.search-wrapper {
+  background-color: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 20px 20px 0 20px;
+
+  /* 深度穿透修改 Element Plus 表单组件样式 */
+  :deep(.el-form-item__label) {
+    color: #94a3b8;
+  }
+
+  :deep(.el-input__wrapper),
+  :deep(.el-select .el-input__wrapper) {
+    background-color: rgba(15, 23, 42, 0.6);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  }
+
+  :deep(.el-input__inner) {
+    color: #e2e8f0;
+  }
+}
+
+
+/* 表格区域暗黑风格定制 */
+.table-wrapper {
+  flex: 1;
+  background-color: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+
+  /* 表格基础样式穿透 */
+  :deep(.custom-table) {
+    background-color: transparent;
+    --el-table-border-color: rgba(255, 255, 255, 0.05);
+    --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
+
+    /* --- 关键修复：为固定列添加实色背景 --- */
+    .el-table__fixed-right,
+    .el-table__fixed {
+      /* 必须使用实色，否则滚动时下方内容会透出来 */
+      /* #1e293b 是 rgba(30, 41, 59) 的实色表现 */
+      background-color: #1e293b !important;
+      height: calc(100% - 12px) !important; /* 避开滚动条高度，防止遮挡横向滚动条 */
+    }
+
+    /* 针对固定列中的单元格 */
+    .el-table__cell.is-fixed-right,
+    .el-table__cell.is-fixed-left {
+      background-color: #1e293b !important;
+    }
+
+    /* 修复固定列顶部的表头背景 */
+    th.el-table__fixed-right,
+    th.el-table__fixed-left {
+      background-color: #161e2c !important;
+    }
+
+
+    background-color: transparent;
+    --el-table-border-color: rgba(255, 255, 255, 0.05);
+    --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
+
+    th.el-table__cell {
+      background-color: rgba(15, 23, 42, 0.8) !important;
+      color: #cbd5e1;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    tr {
+      background-color: transparent;
+    }
+
+    td.el-table__cell {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+    }
+
+  }
+
+  .pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+
+    :deep(.el-pagination.is-background .el-pager li) {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: #94a3b8;
+    }
+    :deep(.el-pagination.is-background .el-pager li.is-active) {
+      background-color: #1890ff;
+      color: #fff;
+    }
+    :deep(.el-pagination.is-background .btn-next),
+    :deep(.el-pagination.is-background .btn-prev) {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: #94a3b8;
+    }
+  }
+}
+
+/* 全局对话框暗黑样式 (如果 el-dialog 支持 custom-class) */
+:global(.dark-dialog) {
+  background-color: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  .el-dialog__title {
+    color: #e2e8f0;
+  }
+
+  .el-form-item__label {
+    color: #94a3b8;
+  }
+}
+</style>

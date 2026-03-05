@@ -171,8 +171,12 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
         // 执行数据库分页查询
         Page<RepairOrderDO> doPage = this.page(new Page<>(req.getPageNo(), req.getPageSize()), wrapper);
 
-        // 构建返回的 VO 分页对象
-        Page<RepairOrderVO> voPage = new Page<>(doPage.getCurrent(), doPage.getSize(), doPage.getTotal());
+        // 构建返回的 VO 分页对象 - 确保使用正确的构造函数参数
+        Page<RepairOrderVO> voPage = new Page<>();
+        voPage.setCurrent(doPage.getCurrent());
+        voPage.setSize(doPage.getSize());
+        voPage.setTotal(doPage.getTotal());
+        
         java.util.List<RepairOrderVO> voList = new java.util.ArrayList<>();
 
         // 遍历组装数据

@@ -27,6 +27,10 @@
           <el-icon><Money /></el-icon>
           <template #title>财务账单</template>
         </el-menu-item>
+        <el-menu-item index="/house">
+          <el-icon><House /></el-icon>
+          <template #title>房屋管理</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -76,7 +80,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Platform, DataLine, Tools, Money, Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
+import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 // 引入您封装好的 request
 import request from '@/utils/request'

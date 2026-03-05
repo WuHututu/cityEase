@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import nynu.cityEase.core.handler.IpInfoTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -70,7 +70,7 @@ public class UserInfoDO extends BaseDO implements Serializable {
     /**
      * 用户的ip信息
      */
-    @TableField(value = "ip",typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "ip", typeHandler = IpInfoTypeHandler.class)
     private IpInfo ip;
 
     @TableField(exist = false)

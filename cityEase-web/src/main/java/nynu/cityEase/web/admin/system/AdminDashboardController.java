@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import nynu.cityEase.api.vo.ResVo;
 import nynu.cityEase.api.vo.constants.RedisKeyConstants;
 import nynu.cityEase.api.vo.constants.StatusEnum;
+import nynu.cityEase.api.vo.system.ChartDataVO;
 import nynu.cityEase.api.vo.system.DashboardMetricsVO;
 import nynu.cityEase.service.system.dict.service.ISysDashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class AdminDashboardController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private ISysDashboardService dashboardService;
+
     @GetMapping("/metrics")
     @ApiOperation("获取后台首页核心指标数据")
     public ResVo<DashboardMetricsVO> getCoreMetrics() {
@@ -33,5 +37,11 @@ public class AdminDashboardController {
 
         DashboardMetricsVO vo = cn.hutool.json.JSONUtil.toBean(cachedData, DashboardMetricsVO.class);
         return ResVo.ok(vo);
+    }
+
+    @GetMapping("/chart/repairTrend")
+    @ApiOperation("获取近七日工单处理趋势折线图数据")
+    public ResVo<ChartDataVO> getRepairTrendChart() {
+        return ResVo.ok(dashboardService.getRepairTrendChart());
     }
 }
