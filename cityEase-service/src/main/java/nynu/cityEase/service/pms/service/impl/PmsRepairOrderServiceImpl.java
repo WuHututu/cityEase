@@ -11,6 +11,7 @@ import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.api.vo.pms.*;
 import nynu.cityEase.api.vo.system.NotifyMsgDTO;
+import nynu.cityEase.api.vo.user.UserSimpleVO;
 import nynu.cityEase.service.pms.repository.entity.RepairOrderDO;
 import nynu.cityEase.service.pms.repository.entity.RoomDO;
 import nynu.cityEase.service.pms.repository.entity.UserRoomRelDO;
@@ -20,20 +21,31 @@ import nynu.cityEase.service.pms.repository.mapper.UserRoomRelMapper;
 import nynu.cityEase.service.pms.service.IPmsPublicAreaService;
 import nynu.cityEase.service.pms.service.IPmsRepairOrderService;
 import nynu.cityEase.service.user.repository.dao.UserDao;
+import nynu.cityEase.service.user.repository.entity.UserInfoDO;
+import nynu.cityEase.service.user.repository.mapper.UserInfoMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+import java.util.List;
+
 @Service
 @Slf4j
 public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, RepairOrderDO> implements IPmsRepairOrderService {
+    @Resource
+    private RepairOrderMapper repairOrderMapper;
+
+    @Resource
+    private UserInfoMapper userInfoMapper;
+
+    @Resource
+    private UserRoomRelMapper userRoomRelMapper; // pms_user_room_rel
 
     @Autowired
     private RoomMapper roomMapper;
-    
-    @Autowired
-    private UserRoomRelMapper userRoomRelMapper;
+
 
     // 注入用户Dao获取用户信息
     @Autowired
@@ -45,6 +57,62 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
+    @Override
+    public RepairOrderVO getRepairDetailForAdmin(Long orderId) {
+        RepairOrderDO orderDO = this.getById(orderId);
+        if (orderDO == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "报修工单不存在");
+        }
+        return buildVO(orderDO);
+    }
+
+
+    @Override
+    public List<UserSimpleVO> listRepairHandlers() {
+        // 1) 优先：历史 handler
+        List<Long> handlerIds = repairOrderMapper.selectDistinctHandlerIds();
+        if (handlerIds != null && !handlerIds.isEmpty()) {
+            List<UserInfoDO> users = userInfoMapper.selectBatchIds(handlerIds);
+            return users.stream()
+                    .filter(u -> u != null && u.getIsDeleted() != null && u.getIsDeleted() == 0)
+                    .map(u -> {
+                        UserSimpleVO vo = new UserSimpleVO();
+                        vo.setUserId(u.getUserId());
+                        String name = cn.hutool.core.util.StrUtil.isNotBlank(u.getRealName())
+                                ? u.getRealName()
+                                : (cn.hutool.core.util.StrUtil.isNotBlank(u.getUsername()) ? u.getUsername() : ("用户" + u.getUserId()));
+                        vo.setName(name);
+                        return vo;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // 2) 兜底：无房屋绑定且非管理员（用 MyBatis-Plus wrapper）
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserInfoDO> qw =
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+
+        qw.eq(UserInfoDO::getIsDeleted, 0)
+                .ne(UserInfoDO::getUserRole, 1)
+                // not in 子查询：pms_user_room_rel
+                .notInSql(UserInfoDO::getUserId, "SELECT user_id FROM pms_user_room_rel WHERE is_deleted = 0")
+                .orderByDesc(UserInfoDO::getUpdateTime)
+                .last("LIMIT 50");
+
+        List<UserInfoDO> users = userInfoMapper.selectList(qw);
+
+        return users.stream().map(u -> {
+            UserSimpleVO vo = new UserSimpleVO();
+            vo.setUserId(u.getUserId());
+            String name = cn.hutool.core.util.StrUtil.isNotBlank(u.getRealName())
+                    ? u.getRealName()
+                    : (cn.hutool.core.util.StrUtil.isNotBlank(u.getUsername()) ? u.getUsername() : ("用户" + u.getUserId()));
+            vo.setName(name);
+            return vo;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -278,5 +346,145 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
             );
         }
     }
+
+    // 1) 抽取：DO -> VO 组装（复用你现有 getRepairPage 中的逻辑）
+    public RepairOrderVO buildVO(RepairOrderDO orderDO) {
+        RepairOrderVO vo = new RepairOrderVO();
+        org.springframework.beans.BeanUtils.copyProperties(orderDO, vo);
+
+        // 报修现场图片
+        if (cn.hutool.core.util.StrUtil.isNotBlank(orderDO.getImages())) {
+            vo.setImagesList(cn.hutool.json.JSONUtil.toList(orderDO.getImages(), String.class));
+        }
+        // 维修结果图片
+        if (cn.hutool.core.util.StrUtil.isNotBlank(orderDO.getHandleImages())) {
+            vo.setHandleImagesList(cn.hutool.json.JSONUtil.toList(orderDO.getHandleImages(), String.class));
+        }
+
+        // 报修人
+        nynu.cityEase.service.user.repository.entity.UserInfoDO submitter = userDao.getByUserId(orderDO.getUserId());
+        if (submitter != null) {
+            String name = cn.hutool.core.util.StrUtil.isNotBlank(submitter.getRealName())
+                    ? submitter.getRealName() : submitter.getUsername();
+            vo.setSubmitterName(name);
+        }
+
+        // 维修工
+        if (orderDO.getHandlerId() != null) {
+            nynu.cityEase.service.user.repository.entity.UserInfoDO handler = userDao.getByUserId(orderDO.getHandlerId());
+            if (handler != null) {
+                String handlerName = cn.hutool.core.util.StrUtil.isNotBlank(handler.getRealName())
+                        ? handler.getRealName() : handler.getUsername();
+                vo.setHandlerName(handlerName);
+            }
+        }
+
+        // 地址拼接
+        if (orderDO.getRoomId() != null) {
+            RoomDO room = roomMapper.selectById(orderDO.getRoomId());
+            if (room != null) {
+                String areaFullName = publicAreaService.getFullAreaName(room.getAreaId());
+                vo.setFullAddress(areaFullName + "-" + room.getRoomNum());
+            }
+        } else {
+            vo.setFullAddress("公共区域");
+        }
+
+        return vo;
+    }
+
+    // 2) App端：我的报修分页
+    @Override
+    public Page<RepairOrderVO> getMyRepairPage(RepairMyOrderQueryReq req) {
+        long userId = StpUtil.getLoginIdAsLong();
+
+        LambdaQueryWrapper<RepairOrderDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(RepairOrderDO::getUserId, userId);
+
+        if (req.getStatus() != null) {
+            wrapper.eq(RepairOrderDO::getStatus, req.getStatus());
+        }
+        if (cn.hutool.core.util.StrUtil.isNotBlank(req.getRepairType())) {
+            wrapper.eq(RepairOrderDO::getRepairType, req.getRepairType());
+        }
+        wrapper.orderByDesc(RepairOrderDO::getCreateTime);
+
+        Page<RepairOrderDO> page = new Page<>(req.getPageNo(), req.getPageSize());
+        Page<RepairOrderDO> doPage = this.page(page, wrapper);
+
+        Page<RepairOrderVO> voPage = new Page<>(doPage.getCurrent(), doPage.getSize(), doPage.getTotal());
+        java.util.List<RepairOrderVO> vos = new java.util.ArrayList<>();
+        for (RepairOrderDO o : doPage.getRecords()) {
+            vos.add(buildVO(o));
+        }
+        voPage.setRecords(vos);
+        return voPage;
+    }
+
+    // 3) App端：我的工单详情（必须本人）
+    @Override
+    public RepairOrderVO getMyRepairDetail(Long orderId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        RepairOrderDO orderDO = this.getById(orderId);
+        if (orderDO == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "报修工单不存在");
+        }
+        if (!orderDO.getUserId().equals(userId)) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "无权查看他人的工单");
+        }
+        return buildVO(orderDO);
+    }
+
+    // 4) App端：取消工单
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelOrder(RepairCancelReq req) {
+        long userId = StpUtil.getLoginIdAsLong();
+        RepairOrderDO orderDO = this.getById(req.getOrderId());
+        if (orderDO == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "报修工单不存在");
+        }
+        if (!orderDO.getUserId().equals(userId)) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "无权操作他人的工单");
+        }
+
+        // 状态机：仅允许 未派单(0) / 处理中(1) 取消（你也可以只允许 0）
+        if (orderDO.getStatus() == null || (orderDO.getStatus() != 0 && orderDO.getStatus() != 1)) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "当前工单状态无法取消");
+        }
+
+        orderDO.setStatus(4); // 4-已取消（你的 DO 注释里定义了 4）:contentReference[oaicite:8]{index=8}
+        // 可选：如果你想记录取消原因，建议以后加字段 cancelReason，这里先不写库字段
+        this.updateById(orderDO);
+    }
+
+    // 5) 维修人员：我被派发的工单分页
+    @Override
+    public Page<RepairOrderVO> getMyAssignedPage(RepairHandlerOrderQueryReq req) {
+        long handlerId = StpUtil.getLoginIdAsLong();
+
+        LambdaQueryWrapper<RepairOrderDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(RepairOrderDO::getHandlerId, handlerId);
+
+        if (req.getStatus() != null) {
+            wrapper.eq(RepairOrderDO::getStatus, req.getStatus());
+        } else {
+            // 默认给维修人员看：处理中/已处理
+            wrapper.in(RepairOrderDO::getStatus, 1, 2);
+        }
+        wrapper.orderByDesc(RepairOrderDO::getCreateTime);
+
+        Page<RepairOrderDO> page = new Page<>(req.getPageNo(), req.getPageSize());
+        Page<RepairOrderDO> doPage = this.page(page, wrapper);
+
+        Page<RepairOrderVO> voPage = new Page<>(doPage.getCurrent(), doPage.getSize(), doPage.getTotal());
+        java.util.List<RepairOrderVO> vos = new java.util.ArrayList<>();
+        for (RepairOrderDO o : doPage.getRecords()) {
+            vos.add(buildVO(o));
+        }
+        voPage.setRecords(vos);
+        return voPage;
+    }
+
 
 }

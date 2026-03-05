@@ -134,6 +134,61 @@
       </template>
     </el-dialog>
   </div>
+
+  <el-dialog v-model="detailVisible" title="工单详情" width="720px">
+    <el-skeleton :loading="detailLoading" animated>
+      <div v-if="detailData">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="工单ID">{{ detailData.orderId ?? detailData.id }}</el-descriptions-item>
+          <el-descriptions-item label="状态">{{ detailData.status }}</el-descriptions-item>
+
+          <el-descriptions-item label="报修类型">{{ detailData.repairType }}</el-descriptions-item>
+          <el-descriptions-item label="报修人">{{ detailData.submitterName }}</el-descriptions-item>
+
+          <el-descriptions-item label="地址" :span="2">{{ detailData.fullAddress }}</el-descriptions-item>
+          <el-descriptions-item label="描述" :span="2">{{ detailData.description }}</el-descriptions-item>
+
+          <el-descriptions-item label="维修人员">{{ detailData.handlerName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="处理结果">{{ detailData.handleResult || '-' }}</el-descriptions-item>
+
+          <el-descriptions-item label="评价分数">{{ detailData.evaluateScore ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="评价内容">{{ detailData.evaluateContent || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div style="margin-top: 12px">
+          <div style="margin-bottom: 6px;font-weight:600">报修图片</div>
+          <el-image
+              v-for="(url, idx) in (detailData.imagesList || [])"
+              :key="'img-'+idx"
+              :src="url"
+              style="width: 120px; height: 120px; margin-right: 8px"
+              fit="cover"
+              :preview-src-list="detailData.imagesList || []"
+              preview-teleported
+          />
+        </div>
+
+        <div style="margin-top: 12px">
+          <div style="margin-bottom: 6px;font-weight:600">处理图片</div>
+          <el-image
+              v-for="(url, idx) in (detailData.handleImagesList || [])"
+              :key="'himg-'+idx"
+              :src="url"
+              style="width: 120px; height: 120px; margin-right: 8px"
+              fit="cover"
+              :preview-src-list="detailData.handleImagesList || []"
+              preview-teleported
+          />
+        </div>
+      </div>
+    </el-skeleton>
+
+    <template #footer>
+      <el-button @click="detailVisible = false">关闭</el-button>
+    </template>
+  </el-dialog>
+
+
 </template>
 
 <script setup lang="ts">
@@ -143,6 +198,48 @@ import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useRoute } from 'vue-router'
+import axios from "axios";
+
+type HandlerOption = { id: number; name: string }
+const handlers = ref<HandlerOption[]>([])
+
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailData = ref<any>(null)
+
+// 自动识别行里的ID字段
+const getRowId = (row: any): number | null => {
+  return (
+      row?.orderId ??
+      row?.id ??
+      row?.repairOrderId ??
+      row?.order_id ??
+      row?.orderID ??
+      null
+  )
+}
+
+const viewDetail = async (row: any) => {
+  const oid = getRowId(row)
+  if (!oid) {
+    ElMessage.error('无法识别工单ID（row里没有 orderId/id 等字段）')
+    return
+  }
+
+  detailLoading.value = true
+  try {
+    // 后端同时兼容 orderId / id，所以这里传哪个都行
+    const res = await axios.post('/admin/pms/repair/detail', { orderId: oid })
+    detailData.value = res.data?.data
+    detailVisible.value = true
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取工单详情失败')
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+
 
 const route = useRoute()
 
@@ -175,20 +272,17 @@ const handlerList = ref<any[]>([])
 // --- 获取动态师傅列表 ---
 const fetchHandlers = async () => {
   try {
-    // 提示：此处暂时通过模拟数据，后续请对接真实后端接口，如 /admin/system/user/handlers
-    // const res: any = await request.get('/admin/system/user/handlers')
-    // handlerList.value = res.data || []
-
-    // 模拟后端返回的数据
-    handlerList.value = [
-      { id: 1001, name: '张师傅 (电工)' },
-      { id: 1002, name: '李师傅 (水管)' },
-      { id: 1003, name: '王师傅 (综合)' }
-    ]
-  } catch (error) {
-    console.error('获取维修师傅列表失败', error)
+    const res = await axios.get('/admin/pms/repair/handlers')
+    // 适配你的返回结构：如果是 {code,data,msg} 这种，就用 res.data.data
+    handlers.value = (res.data.data || []).map((x: any) => ({
+      id: x.userId,
+      name: x.name
+    }))
+  } catch (e) {
+    handlers.value = []
   }
 }
+
 
 // --- 获取列表数据 ---
 const fetchData = async () => {
@@ -285,10 +379,6 @@ const submitDispatch = async () => {
   })
 }
 
-const viewDetail = (id: number) => {
-  ElMessage.info(`预留功能：即将跳转到工单 ${id} 的详情追踪页`)
-}
-
 onMounted(() => {
   fetchHandlers()
   fetchData()
@@ -365,6 +455,11 @@ onMounted(() => {
     th.el-table__fixed-left {
       background-color: #161e2c !important;
     }
+
+
+    background-color: transparent;
+    --el-table-border-color: rgba(255, 255, 255, 0.05);
+    --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
 
     th.el-table__cell {
       background-color: rgba(15, 23, 42, 0.8) !important;

@@ -2,12 +2,20 @@ package nynu.cityEase.service.pms.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import nynu.cityEase.api.vo.pms.*;
+import nynu.cityEase.api.vo.user.UserSimpleVO;
 import nynu.cityEase.service.pms.repository.entity.RepairOrderDO;import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import nynu.cityEase.api.vo.pms.RepairOrderQueryReq;
 import nynu.cityEase.api.vo.pms.RepairOrderVO;
 
+import java.util.List;
+
 public interface IPmsRepairOrderService extends IService<RepairOrderDO> {
-    
+
+    List<UserSimpleVO> listRepairHandlers();
+
+    RepairOrderVO getRepairDetailForAdmin(Long orderId);
+
+
     /**
      * 业主提交报修工单
      * * @param req 报修请求参数
@@ -32,4 +40,16 @@ public interface IPmsRepairOrderService extends IService<RepairOrderDO> {
      * 业主评价并结单
      */
     void evaluateOrder(RepairEvaluateReq req);
+
+    /** App端：分页获取“我的报修工单” */
+    Page<RepairOrderVO> getMyRepairPage(RepairMyOrderQueryReq req);
+
+    /** App端：工单详情（带鉴权：必须是本人） */
+    RepairOrderVO getMyRepairDetail(Long orderId);
+
+    /** App端：取消工单（带鉴权：必须是本人；状态必须允许取消） */
+    void cancelOrder(RepairCancelReq req);
+
+    /** 维修人员：分页获取“派给我的工单” */
+    Page<RepairOrderVO> getMyAssignedPage(RepairHandlerOrderQueryReq req);
 }

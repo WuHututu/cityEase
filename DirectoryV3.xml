@@ -15,4 +15,6 @@
     <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/constants/MqConstants.java" title="队列名称常量"/>
     <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/system/NotifyMsgDTO.java" title="消息传递体"
           extension="" presentableText="" tooltipTitle="" icon="" textColor="" backgroundColor=""/>
+    <tree path="/cityEase-api/src/main/java/nynu/cityEase/api/vo/pms/RepairHandlerOrderQueryReq.java"
+          title="维修人员视角分页"/>
 </trees>
