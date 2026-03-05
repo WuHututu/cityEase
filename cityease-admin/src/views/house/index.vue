@@ -209,6 +209,27 @@ onMounted(() => {
     --el-table-border-color: rgba(255, 255, 255, 0.05);
     --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
 
+    /* --- 关键修复：为固定列添加实色背景 --- */
+    .el-table__fixed-right,
+    .el-table__fixed {
+      /* 必须使用实色，否则滚动时下方内容会透出来 */
+      /* #1e293b 是 rgba(30, 41, 59) 的实色表现 */
+      background-color: #1e293b !important;
+      height: calc(100% - 12px) !important; /* 避开滚动条高度，防止遮挡横向滚动条 */
+    }
+
+    /* 针对固定列中的单元格 */
+    .el-table__cell.is-fixed-right,
+    .el-table__cell.is-fixed-left {
+      background-color: #1e293b !important;
+    }
+
+    /* 修复固定列顶部的表头背景 */
+    th.el-table__fixed-right,
+    th.el-table__fixed-left {
+      background-color: #161e2c !important;
+    }
+
     th.el-table__cell {
       background-color: rgba(15, 23, 42, 0.8) !important;
       color: #cbd5e1;
@@ -223,12 +244,6 @@ onMounted(() => {
     td.el-table__cell {
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       color: #94a3b8;
-    }
-
-    /* 修复固定列在暗黑模式下的背景问题 */
-    .el-table__fixed-right::before,
-    .el-table__fixed::before {
-      background-color: transparent;
     }
   }
 
