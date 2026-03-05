@@ -159,7 +159,7 @@ const handleResize = () => {
 // 获取后台首页核心指标数据
 const fetchMetrics = async () => {
   try {
-    const res: any = await request.get('/admin/dashboard/metrics')
+    const res: any = await request.get('/admin/system/dashboard/metrics')
     if (res) {
       metrics.value = res.data || res // 兼容后端的 ResVo 结构
       // 如果后端有返回真实的图表数据，这里可以传入 initChart(res.chartData)

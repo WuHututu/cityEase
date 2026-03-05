@@ -9,10 +9,10 @@ import type { FormInstance, FormRules } from 'element-plus'
 const loading = ref(false)
 const total = ref(0)
 const queryParams = reactive({
-  current: 1,
-  size: 10,
+  pageNo: 1,
+  pageSize: 10,
   status: null as number | null,
-  keyword: ''
+  repairType: '' // 后端字段：报修类型（字典值）
 })
 const tableData = ref<any[]>([])
 
@@ -23,7 +23,7 @@ const fetchData = async () => {
     // 【修改点】: 真实接口请求。注意通常封装好的 request，返回的 res 就是外层解构后的数据。
     // 如果后台是 ResVo<PageVo<T>>，这里获取分页列表数据应当是 res.data.records 或者是 res.records，视你的 request.ts 拦截器而定。
     // 这里做了一个兼容性解构：
-    const res: any = await request.post('/admin/repair/list', queryParams)
+    const res: any = await request.post('/admin/pms/repair/page', queryParams)
 
     // 如果拦截器剥离了 code/msg/status，直接返回了 data 对象：
     const pageData = res.data ? res.data : res
@@ -38,12 +38,12 @@ const fetchData = async () => {
 
 // 搜索与重置
 const handleSearch = () => {
-  queryParams.current = 1
+  queryParams.pageNo = 1
   fetchData()
 }
 const resetQuery = () => {
   queryParams.status = null
-  queryParams.keyword = ''
+  queryParams.repairType = ''
   handleSearch()
 }
 
@@ -54,12 +54,11 @@ const dispatchFormRef = ref<FormInstance>()
 const currentOrderId = ref<number | null>(null)
 
 const dispatchForm = reactive({
-  repairmanId: null,
-  remark: ''
+  handlerId: null as number | null
 })
 
 const rules = reactive<FormRules>({
-  repairmanId: [{ required: true, message: '请必须选择一位维修师傅', trigger: 'change' }]
+  handlerId: [{ required: true, message: '必须选择一位维修师傅', trigger: 'change' }]
 })
 
 // 打开弹窗
@@ -83,10 +82,9 @@ const submitDispatch = async () => {
       submitting.value = true
       try {
         // 请求后端派单接口 (会触发 RabbitMQ 消息发送给业主)
-        await request.post('/admin/repair/dispatch', {
+        await request.post('/admin/pms/repair/dispatch', {
           orderId: currentOrderId.value,
-          repairmanId: dispatchForm.repairmanId,
-          remark: dispatchForm.remark
+          handlerId: dispatchForm.handlerId
         })
         ElMessage.success('派单成功！已通过消息队列异步通知业主。')
         handleCloseDialog()
