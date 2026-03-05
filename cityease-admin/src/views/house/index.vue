@@ -115,24 +115,16 @@ const tableData = ref<any[]>([])
 const fetchData = async () => {
   loading.value = true
   try {
-    // 增加兼容性参数 (current, size)，解决后端如果是 MyBatis-Plus Page 默认分页解析不到页码的问题
-    const params = {
-      ...queryParams,
-      current: queryParams.pageNo,
-      size: queryParams.pageSize
-    }
-
-    const res: any = await request.post('/admin/pms/house/page', params)
-    const pageData = res.data ? res.data : res
+    const pageData: any = await request.post('/admin/pms/house/page', queryParams)
     tableData.value = pageData.records || []
-    total.value = parseInt(pageData.total) || 0
-  } catch (error) {
-    console.error('获取区域列表失败', error)
+    total.value = Number(pageData.total || 0)
+  } catch (e) {
     ElMessage.error('获取区域列表失败')
   } finally {
     loading.value = false
   }
 }
+
 
 // 搜索与重置
 const handleSearch = () => {

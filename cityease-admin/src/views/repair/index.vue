@@ -84,6 +84,7 @@
               完成
             </el-button>
 
+
             <el-button size="small" type="info" plain @click="viewDetail(scope.row)">
               详情
             </el-button>
@@ -204,42 +205,24 @@
       <el-button @click="detailVisible = false">关闭</el-button>
     </template>
   </el-dialog>
+
   <!-- 提交处理结果对话框 -->
-  <el-dialog
-      v-model="completeVisible"
-      title="提交处理结果"
-      width="560px"
-      :before-close="handleCloseCompleteDialog"
-  >
-    <el-form
-        ref="completeFormRef"
-        :model="completeForm"
-        :rules="completeRules"
-        label-width="100px"
-    >
+  <el-dialog v-model="completeVisible" title="提交处理结果" width="560px" @close="closeCompleteDialog">
+    <el-form ref="completeFormRef" :model="completeForm" :rules="completeRules" label-width="90px">
       <el-form-item label="处理结果" prop="handleResult">
-        <el-input
-            v-model="completeForm.handleResult"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入处理结果（必填）"
-        />
+        <el-input v-model="completeForm.handleResult" type="textarea" :rows="4" placeholder="请输入处理结果（必填）" />
       </el-form-item>
 
       <el-form-item label="处理图片">
-        <div style="width: 100%">
-          <div
-              v-for="(url, idx) in completeForm.handleImages"
-              :key="idx"
-              style="display:flex; gap:8px; margin-bottom:8px; align-items:center;"
-          >
+        <div style="width:100%">
+          <div v-for="(url, idx) in completeForm.handleImages" :key="idx" style="display:flex; gap:8px; margin-bottom:8px;">
             <el-input v-model="completeForm.handleImages[idx]" placeholder="图片URL（可选）" />
             <el-button type="danger" plain @click="removeHandleImage(idx)">删除</el-button>
           </div>
 
           <el-button type="primary" plain @click="addHandleImage">新增一张</el-button>
 
-          <div v-if="completeForm.handleImages.length" style="margin-top: 10px">
+          <div v-if="completeForm.handleImages.filter(u => u && u.trim()).length" style="margin-top: 10px">
             <div style="margin-bottom: 6px; font-weight: 600">预览</div>
             <el-image
                 v-for="(url, idx) in completeForm.handleImages.filter(u => u && u.trim())"
@@ -256,13 +239,10 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleCloseCompleteDialog">取消</el-button>
-      <el-button type="success" :loading="completeSubmitting" @click="submitComplete">
-        确认提交
-      </el-button>
+      <el-button @click="closeCompleteDialog">取消</el-button>
+      <el-button type="success" :loading="completeSubmitting" @click="submitComplete">确认提交</el-button>
     </template>
   </el-dialog>
-
 
 
 </template>
@@ -276,24 +256,6 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useRoute } from 'vue-router'
 
 // --- 提交处理结果弹窗 ---
-const completeVisible = ref(false)
-const completeSubmitting = ref(false)
-const completeFormRef = ref<FormInstance>()
-const completeOrderId = ref<number | null>(null)
-
-const completeForm = reactive({
-  handleResult: '',
-  handleImages: [] as string[]
-})
-
-const completeRules = reactive<FormRules>({
-  handleResult: [{ required: true, message: '请输入处理结果', trigger: 'blur' }]
-})
-
-const openCompleteDialog = (row: any) => {
-  completeOrderId.value = row?.id ?? row?.orderId ?? null
-  completeVisible.value = true
-}
 
 const handleCloseCompleteDialog = () => {
   completeVisible.value = false
@@ -302,36 +264,6 @@ const handleCloseCompleteDialog = () => {
   completeOrderId.value = null
 }
 
-const addHandleImage = () => {
-  completeForm.handleImages.push('')
-}
-
-const removeHandleImage = (idx: number) => {
-  completeForm.handleImages.splice(idx, 1)
-}
-
-const submitComplete = async () => {
-  if (!completeFormRef.value) return
-  await completeFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    completeSubmitting.value = true
-    try {
-      await request.post('/admin/pms/repair/complete', {
-        orderId: completeOrderId.value,
-        handleResult: completeForm.handleResult,
-        handleImages: completeForm.handleImages
-            .map(s => s?.trim())
-            .filter(Boolean)
-      })
-      ElMessage.success('处理结果已提交')
-      handleCloseCompleteDialog()
-      fetchData()
-    } finally {
-      completeSubmitting.value = false
-    }
-  })
-}
 
 
 const route = useRoute()
@@ -541,6 +473,77 @@ const submitDispatch = async () => {
     }
   })
 }
+
+// 统一解包：你的 request 返回是 {status, result}
+const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
+
+const completeVisible = ref(false)
+const completeSubmitting = ref(false)
+const completeFormRef = ref()
+
+const completeOrderId = ref<string | null>(null)
+const completeForm = reactive({
+  handleResult: '',
+  handleImages: [] as string[]
+})
+
+const completeRules = {
+  handleResult: [{ required: true, message: '请输入处理结果', trigger: 'blur' }]
+}
+
+const openCompleteDialog = (row: any) => {
+  // 你的后端返回 id 是字符串
+  completeOrderId.value = String(row?.id ?? row?.orderId ?? '')
+  completeVisible.value = true
+}
+
+const addHandleImage = () => completeForm.handleImages.push('')
+const removeHandleImage = (idx: number) => completeForm.handleImages.splice(idx, 1)
+
+const closeCompleteDialog = () => {
+  completeVisible.value = false
+  completeOrderId.value = null
+  completeForm.handleResult = ''
+  completeForm.handleImages = []
+  completeFormRef.value?.resetFields?.()
+}
+
+const submitComplete = async () => {
+  if (!completeOrderId.value) {
+    ElMessage.error('缺少工单ID')
+    return
+  }
+
+  const form = completeFormRef.value
+  if (form?.validate) {
+    const ok = await form.validate().catch(() => false)
+    if (!ok) return
+  } else {
+    if (!completeForm.handleResult?.trim()) {
+      ElMessage.error('请输入处理结果')
+      return
+    }
+  }
+
+  completeSubmitting.value = true
+  try {
+    const res = await request.post('/admin/pms/repair/complete', {
+      orderId: completeOrderId.value,
+      handleResult: completeForm.handleResult.trim(),
+      handleImages: completeForm.handleImages.map(s => s?.trim()).filter(Boolean)
+    })
+    unwrap(res) // 只是为了兼容封装；一般不需要用返回值
+
+    ElMessage.success('处理结果已提交')
+    closeCompleteDialog()
+    await fetchData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '提交失败')
+  } finally {
+    completeSubmitting.value = false
+  }
+}
+
 
 onMounted(() => {
   fetchHandlers()

@@ -265,49 +265,25 @@ const navigateToHouse = () => {
 // 获取后台首页核心指标数据
 const fetchMetrics = async () => {
   try {
-    const res: any = await request.get('/admin/system/dashboard/metrics')
-    if (res) {
-      metrics.value = res.data || res // 兼容后端的 ResVo 结构
-      // 如果后端有返回真实的图表数据，这里可以传入 initChart(res.chartData)
-    }
-  } catch (error) {
+    const data: any = await request.get('/admin/system/dashboard/metrics')
+    metrics.value = data // 直接就是 DashboardMetricsVO
+  } catch (e) {
     ElMessage.error('获取大屏指标数据失败')
   }
 }
 
+
 // 获取近七日工单趋势图表数据
 const fetchChartData = async () => {
   try {
-    const res: any = await request.get('/admin/system/dashboard/chart/repairTrend')
-
-    // 自动探测真实的数据层级
-    let chartData = null;
-
-    if (res?.result?.series) {
-      chartData = res.result;             // 场景1: Axios 拦截器已解包响应体
-    } else if (res?.data?.result?.series) {
-      chartData = res.data.result;        // 场景2: Axios 原生返回，未完全解包
-    } else if (res?.data?.series) {
-      chartData = res.data;               // 场景3: 备用兼容
-    } else if (res?.series) {
-      chartData = res;                    // 场景4: 备用兼容
-    }
-
-    // 打印出来检查一下是否拿到了 { series: [...], xaxisData: [...] }
-    console.log('🔍 解析给 ECharts 的真实数据:', chartData);
-
-    if (chartData && (chartData.xAxisData || chartData.xaxisData) && chartData.series) {
-      initChart(chartData) // 使用真实数据初始化图表
-    } else {
-      console.warn('⚠️ 未匹配到正确的数据结构，使用默认全0配置', res);
-      initChart() // 使用默认配置初始化图表
-    }
-  } catch (error) {
-    console.error('❌ 获取图表数据失败', error)
+    const chartData: any = await request.get('/admin/system/dashboard/chart/repairTrend')
+    initChart(chartData) // chartData 直接是 { xAxisData, series }
+  } catch (e) {
     ElMessage.error('获取图表数据失败')
-    initChart() // 使用默认配置初始化图表
+    initChart()
   }
 }
+
 
 onMounted(() => {
   fetchMetrics();
