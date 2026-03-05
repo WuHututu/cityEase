@@ -47,14 +47,14 @@
         <el-table-column prop="repairType" label="报修类型" width="120" />
         <el-table-column prop="description" label="问题描述" show-overflow-tooltip min-width="200" />
 
-        <el-table-column prop="status" label="状态" width="120" align="center">
-          <template #default="scope">
-            <el-tag v-if="scope.row.status === 0" type="danger" effect="dark">待派发</el-tag>
-            <el-tag v-else-if="scope.row.status === 1" type="warning" effect="dark">处理中</el-tag>
-            <el-tag v-else-if="scope.row.status === 2" type="success" effect="dark">已完成</el-tag>
-            <el-tag v-else type="info">未知</el-tag>
+        <el-table-column label="状态" prop="status" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)">
+              {{ statusText(row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
+
 
         <el-table-column prop="createTime" label="报修时间" width="180" />
 
@@ -141,7 +141,12 @@
       <div v-if="detailData">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="工单ID">{{ detailData.orderId ?? detailData.id }}</el-descriptions-item>
-          <el-descriptions-item label="状态">{{ detailData.status }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="statusTagType(detailData.status)">
+              {{ statusText(detailData.status) }}
+            </el-tag>
+          </el-descriptions-item>
+
 
           <el-descriptions-item label="报修类型">{{ detailData.repairType }}</el-descriptions-item>
           <el-descriptions-item label="报修人">{{ detailData.submitterName }}</el-descriptions-item>
@@ -201,6 +206,31 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+
+const statusText = (s: any) => {
+  const n = Number(s)
+  switch (n) {
+    case 0: return '待派发'
+    case 1: return '处理中'
+    case 2: return '已完成'
+    case 3: return '已评价'
+    case 4: return '已取消'
+    default: return '未知'
+  }
+}
+
+const statusTagType = (s: any) => {
+  const n = Number(s)
+  switch (n) {
+    case 0: return 'info'
+    case 1: return 'warning'
+    case 2: return 'success'
+    case 3: return 'success'
+    case 4: return 'danger'
+    default: return 'info'
+  }
+}
+
 
 // 添加详情相关变量
 const detailVisible = ref(false)
@@ -317,21 +347,24 @@ const viewDetail = async (row: any) => {
     return
   }
 
+  detailData.value = null
+  detailVisible.value = true
   detailLoading.value = true
-  try {
-    const unwrap = (res: any) => res?.data?.data ?? res?.data ?? res
 
+  try {
     const res: any = await request.post('/admin/pms/repair/detail', { orderId: oid })
-    detailData.value = unwrap(res)
-    detailData.value = res.data?.data || res.data
-    detailVisible.value = true
+
+    // ✅ 兼容 request 的各种封装返回：VO / {data:VO} / {data:{data:VO}}
+    detailData.value = res?.data?.data ?? res?.data ?? res
   } catch (e: any) {
     console.error('获取工单详情失败', e)
     ElMessage.error(e?.message || '获取工单详情失败')
+    detailVisible.value = false
   } finally {
     detailLoading.value = false
   }
 }
+
 
 // --- 派单弹窗交互逻辑 ---
 const dialogVisible = ref(false)

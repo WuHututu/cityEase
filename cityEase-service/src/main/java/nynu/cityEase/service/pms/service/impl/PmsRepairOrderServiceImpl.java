@@ -73,7 +73,10 @@ public class PmsRepairOrderServiceImpl extends ServiceImpl<RepairOrderMapper, Re
         // 1) 优先：历史 handler
         List<Long> handlerIds = repairOrderMapper.selectDistinctHandlerIds();
         if (handlerIds != null && !handlerIds.isEmpty()) {
-            List<UserInfoDO> users = userInfoMapper.selectBatchIds(handlerIds);
+            List<UserInfoDO> users = userInfoMapper.selectList(
+                    new LambdaQueryWrapper<UserInfoDO>()
+                            .in(UserInfoDO::getUserId, handlerIds)
+            );
             return users.stream()
                     .filter(u -> u != null && u.getIsDeleted() != null && u.getIsDeleted() == 0)
                     .map(u -> {
