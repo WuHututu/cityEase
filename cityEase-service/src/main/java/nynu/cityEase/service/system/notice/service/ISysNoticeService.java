@@ -8,8 +8,11 @@ import nynu.cityEase.api.vo.system.NoticeListVO;
 import nynu.cityEase.api.vo.system.NoticeSaveReq;
 import nynu.cityEase.service.system.notice.repository.entity.SysNoticeDO;
 
+/**
+ * 公告服务
+ */
 public interface ISysNoticeService extends IService<SysNoticeDO> {
-    
+
     /**
      * 后台：新增或修改公告
      */
