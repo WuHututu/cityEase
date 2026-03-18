@@ -7,6 +7,7 @@ import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.service.gov.repository.entity.GovPointLogDO;
 import nynu.cityEase.service.gov.repository.mapper.GovPointLogMapper;
 import nynu.cityEase.service.gov.service.IGovPointService;
+import nynu.cityEase.service.gov.service.IGovPointRankingCacheService;
 import nynu.cityEase.service.pms.repository.entity.RoomDO;
 import nynu.cityEase.service.pms.repository.mapper.RoomMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class GovPointServiceImpl extends ServiceImpl<GovPointLogMapper, GovPoint
 
     @Autowired
     private GovPointLogMapper pointLogMapper;
+
+    @Autowired
+    private IGovPointRankingCacheService cacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,5 +78,13 @@ public class GovPointServiceImpl extends ServiceImpl<GovPointLogMapper, GovPoint
         logDO.setReason(reason);
 
         pointLogMapper.insert(logDO);
+
+        // 4. 更新缓存中的积分信息
+        try {
+            cacheService.updateRoomPoints(roomId, newRoom.getPointsBalance());
+        } catch (Exception e) {
+            // 缓存更新失败不影响主业务
+            System.err.println("更新积分缓存失败: " + e.getMessage());
+        }
     }
 }

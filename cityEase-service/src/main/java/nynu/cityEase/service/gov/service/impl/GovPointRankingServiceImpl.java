@@ -3,12 +3,14 @@ package nynu.cityEase.service.gov.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import nynu.cityEase.api.vo.gov.BuildingPointStatsVO;
 import nynu.cityEase.api.vo.gov.PointRankingVO;
+import nynu.cityEase.service.gov.service.IGovPointRankingCacheService;
 import nynu.cityEase.service.gov.service.IGovPointRankingService;
 import nynu.cityEase.service.pms.repository.entity.PublicAreaDO;
 import nynu.cityEase.service.pms.repository.entity.RoomDO;
 import nynu.cityEase.service.pms.repository.mapper.PublicAreaMapper;
 import nynu.cityEase.service.pms.repository.mapper.RoomMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -27,13 +29,25 @@ public class GovPointRankingServiceImpl implements IGovPointRankingService {
     @Autowired
     private PublicAreaMapper publicAreaMapper;
 
+    @Autowired
+    @Lazy
+    private IGovPointRankingCacheService cacheService;
+
     @Override
     public List<PointRankingVO> getRoomPointRanking(Integer limit) {
         if (limit == null || limit <= 0) {
             limit = 50;
         }
 
-        // 查询所有有积分的房屋，按积分余额降序排列
+        // 优先从缓存获取
+        try {
+            return cacheService.getRoomRankingFromCache(limit);
+        } catch (Exception e) {
+            // 缓存异常时降级到数据库查询
+            System.err.println("从缓存获取排行榜失败，降级到数据库查询: " + e.getMessage());
+        }
+
+        // 数据库查询逻辑
         LambdaQueryWrapper<RoomDO> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.gt(RoomDO::getPointsBalance, 0)
                    .orderByDesc(RoomDO::getPointsBalance)
@@ -66,6 +80,17 @@ public class GovPointRankingServiceImpl implements IGovPointRankingService {
 
     @Override
     public PointRankingVO getRoomRanking(Long roomId) {
+        // 优先从缓存获取
+        try {
+            PointRankingVO cached = cacheService.getRoomRankingFromCache(roomId);
+            if (cached != null) {
+                return cached;
+            }
+        } catch (Exception e) {
+            System.err.println("从缓存获取房屋排名失败，降级到数据库查询: " + e.getMessage());
+        }
+
+        // 数据库查询逻辑
         RoomDO room = roomMapper.selectById(roomId);
         if (room == null) {
             return null;
@@ -95,9 +120,21 @@ public class GovPointRankingServiceImpl implements IGovPointRankingService {
 
     @Override
     public List<BuildingPointStatsVO> getBuildingPointStats() {
+        // 优先从缓存获取
+        try {
+            List<BuildingPointStatsVO> cached = cacheService.getBuildingStatsFromCache();
+            if (cached != null && !cached.isEmpty()) {
+                return cached;
+            }
+        } catch (Exception e) {
+            System.err.println("从缓存获取楼栋统计失败，降级到数据库查询: " + e.getMessage());
+        }
+
+        // 数据库查询逻辑
         // 查询所有楼栋级别的区域
         LambdaQueryWrapper<PublicAreaDO> areaWrapper = new LambdaQueryWrapper<>();
-        areaWrapper.eq(PublicAreaDO::getLevel, 2); // 楼栋级别
+        // 楼栋级别
+        areaWrapper.eq(PublicAreaDO::getLevel, 2);
         List<PublicAreaDO> buildings = publicAreaMapper.selectList(areaWrapper);
 
         List<BuildingPointStatsVO> result = new ArrayList<>();
@@ -155,6 +192,14 @@ public class GovPointRankingServiceImpl implements IGovPointRankingService {
             limit = 50;
         }
 
+        // 优先从缓存获取
+        try {
+            return cacheService.getBuildingRoomRankingFromCache(areaId, limit);
+        } catch (Exception e) {
+            System.err.println("从缓存获取楼栋排行失败，降级到数据库查询: " + e.getMessage());
+        }
+
+        // 数据库查询逻辑
         LambdaQueryWrapper<RoomDO> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(RoomDO::getAreaId, areaId)
                    .gt(RoomDO::getPointsBalance, 0)

@@ -57,6 +57,31 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '积分商城' }
       },
       {
+        path: 'point',
+        name: 'Point',
+        redirect: '/point/overview',
+        children: [
+          {
+            path: 'overview',
+            name: 'PointOverview',
+            component: () => import('@/views/point/overview.vue'),
+            meta: { title: '积分总览' }
+          },
+          {
+            path: 'ranking',
+            name: 'PointRanking',
+            component: () => import('@/views/point/ranking.vue'),
+            meta: { title: '积分排行榜' }
+          },
+          {
+            path: 'rules',
+            name: 'PointRules',
+            component: () => import('@/views/point/rules.vue'),
+            meta: { title: '积分规则' }
+          }
+        ]
+      },
+      {
         path: 'user',
         name: 'User',
         component: () => import('@/views/user/index.vue'),

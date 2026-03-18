@@ -9,12 +9,6 @@ database:
   username: root
   password: 123456
 
-cache:
-  redis:
-    host: 192.168.200.147
-    port: 6379
-#    password:
-    timeout: 10s
 
 
 # mybatis 相关统一配置
@@ -36,6 +30,17 @@ security:
 spring:
   config:
     import: application-dal.yml,application-login.yml
+  redis:
+    host: 192.168.200.147
+    port: 6379
+    # password:
+    timeout: 10000ms
+    lettuce:
+      pool:
+        max-active: 200
+        max-wait: -1ms
+        max-idle: 20
+        min-idle: 5
 
   rabbitmq:
     host: 192.168.200.147
@@ -69,8 +74,7 @@ aliyun:
   oss:
     bucket-name: wuhututu          # 存储桶名称
     endpoint: oss-cn-hangzhou.aliyuncs.com  # 地域Endpoint
-    access-key-id: LTAI5tJ5Nkz6MfHZ1PBpGoer      # 你的AccessKey ID
-    access-key-secret: zDDedh2iX6xXG8Ec1y82cPmLwWJHNn  # 你的AccessKey Secret
+
     file-host: wuhututu/       # 上传文件的基础路径
 
 # 文件上传配置

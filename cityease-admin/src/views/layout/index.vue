@@ -67,6 +67,18 @@
           <template #title>积分商城</template>
         </el-menu-item>
 
+        <el-sub-menu index="point">
+          <template #title>
+            <el-icon>
+              <Trophy />
+            </el-icon>
+            <span>积分管理</span>
+          </template>
+          <el-menu-item index="/point/overview">积分总览</el-menu-item>
+          <el-menu-item index="/point/ranking">积分排行榜</el-menu-item>
+          <el-menu-item index="/point/rules">积分规则</el-menu-item>
+        </el-sub-menu>
+
         <el-menu-item index="/user">
           <el-icon>
             <User />
@@ -117,7 +129,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, Bell, ShoppingCart, Connection, Setting } from '@element-plus/icons-vue'
+import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, Bell, ShoppingCart, Connection, Setting, Trophy } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
