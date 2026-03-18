@@ -10,10 +10,6 @@ import java.util.List;
 @Mapper
 public interface RepairOrderMapper extends BaseMapper<RepairOrderDO> {
 
-    @Select("""
-    SELECT DISTINCT handler_id
-    FROM pms_repair_order
-    WHERE handler_id IS NOT NULL
-""")
+    @Select("SELECT DISTINCT handler_id FROM pms_repair_order WHERE handler_id IS NOT NULL")
     List<Long> selectDistinctHandlerIds();
 }

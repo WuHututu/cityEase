@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -117,10 +118,14 @@ public class AdminRoomController {
     return ResVo.ok();
   }
 
-  @DeleteMapping("/delete")
+  @PostMapping("/delete")
   @ApiOperation("删除房屋")
   @Transactional(rollbackFor = Exception.class)
-  public ResVo<String> delete(@RequestParam("id") Long id) {
+  public ResVo<String> delete(@RequestBody Map<String, Long> params) {
+    Long id = params.get("id");
+    if (id == null) {
+      throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "缺少 id 参数");
+    }
     int rows = roomMapper.deleteById(id);
     if (rows <= 0) {
       throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "房屋不存在或已删除");

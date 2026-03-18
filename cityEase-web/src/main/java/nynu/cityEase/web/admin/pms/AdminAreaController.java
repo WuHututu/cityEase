@@ -46,6 +46,9 @@ public class AdminAreaController {
       vo.setLevel(a.getLevel());
       vo.setSort(a.getSort());
       vo.setChildren(new ArrayList<>());
+      // 设置 areaType 和 fullAddress（后续优化）
+      vo.setAreaType(null); // TODO: 从字典映射
+      vo.setFullAddress(buildFullAddress(a.getId(), list));
       return vo;
     }).collect(Collectors.toMap(AdminAreaTreeVO::getId, x -> x, (a, b) -> a));
 
@@ -85,10 +88,14 @@ public class AdminAreaController {
     return ResVo.ok();
   }
 
-  @DeleteMapping("/delete")
+  @PostMapping("/delete")
   @ApiOperation("删除公共区域")
   @Transactional(rollbackFor = Exception.class)
-  public ResVo<String> delete(@RequestParam("id") Long id) {
+  public ResVo<String> delete(@RequestBody Map<String, Long> params) {
+    Long id = params.get("id");
+    if (id == null) {
+      throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "缺少 id 参数");
+    }
     // 1) 存在子节点不允许删
     Long children = publicAreaMapper.selectCount(new LambdaQueryWrapper<PublicAreaDO>()
         .eq(PublicAreaDO::getParentId, id));
@@ -156,5 +163,38 @@ public class AdminAreaController {
     for (AdminAreaTreeVO n : nodes) {
       sortTreeBySort(n.getChildren());
     }
+  }
+
+  /**
+   * 拼接完整地址（与房屋管理逻辑一致）
+   */
+  private String buildFullAddress(Long areaId, List<PublicAreaDO> allAreas) {
+    if (areaId == null) {
+      return "";
+    }
+
+    Map<Long, PublicAreaDO> areaMap = allAreas.stream()
+        .collect(Collectors.toMap(PublicAreaDO::getId, a -> a));
+
+    StringBuilder fullName = new StringBuilder();
+    Long currentId = areaId;
+
+    // 向上溯源，直到 parentId = 0 或者找不到为止
+    int maxDepth = 10;
+    while (currentId != null && currentId != 0L && maxDepth-- > 0) {
+      PublicAreaDO area = areaMap.get(currentId);
+      if (area == null) {
+        break;
+      }
+
+      // 往头部插入，因为是从底层往上查的
+      if (!fullName.isEmpty()) {
+        fullName.insert(0, "-");
+      }
+      fullName.insert(0, area.getName());
+
+      currentId = area.getParentId();
+    }
+    return fullName.toString();
   }
 }

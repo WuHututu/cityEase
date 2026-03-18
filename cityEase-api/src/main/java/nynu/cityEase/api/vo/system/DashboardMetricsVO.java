@@ -20,4 +20,13 @@ public class DashboardMetricsVO {
 
     @ApiModelProperty("已发布的系统公告总数")
     private Long publishedNotices;
+
+    @ApiModelProperty("今日新增公告数")
+    private Long todayNotices;
+
+    @ApiModelProperty("本周新增公告数")
+    private Long weekNotices;
+
+    @ApiModelProperty("置顶公告数")
+    private Long topNotices;
 }

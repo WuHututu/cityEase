@@ -48,4 +48,10 @@ public class RepairOrderVO {
     @ApiModelProperty("维修完成时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime handleTime;
+
+    @ApiModelProperty("评价分数 (1-5 分)")
+    private Integer rating;
+
+    @ApiModelProperty("评价内容")
+    private String evaluateContent;
 }

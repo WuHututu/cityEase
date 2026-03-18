@@ -12,7 +12,7 @@ export interface PointGoodsSaveReq {
   name: string
   description?: string
   imageUrl?: string
-  points: string | number
+  pointsPrice: string | number
   stock: number
   status: number
 }

@@ -24,8 +24,9 @@ public class UserConverter {
         }
         UserDO userDO = new UserDO();
         userDO.setId(req.getUserId());
-        userDO.setThirdAccountId(req.getThirdAccountId());
-        userDO.setLoginType(req.getLoginType());
+        // 注释掉不存在的字段
+        // userDO.setThirdAccountId(req.getThirdAccountId());
+        // userDO.setLoginType(req.getLoginType());
         return userDO;
     }
 

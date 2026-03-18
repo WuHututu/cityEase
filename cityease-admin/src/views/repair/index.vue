@@ -5,7 +5,8 @@
       <el-form :inline="true" :model="queryParams" class="search-form">
         <el-form-item label="工单状态">
           <!-- 修复：明确指定下拉框宽度，防止文字被遮挡 -->
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="custom-select" style="width: 160px;">
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="custom-select"
+            style="width: 160px;">
             <el-option label="待派发" :value="0" />
             <el-option label="处理中" :value="1" />
             <el-option label="已完成" :value="2" />
@@ -29,13 +30,8 @@
 
     <!-- 主体表格区域 -->
     <div class="table-wrapper">
-      <el-table
-          v-loading="loading"
-          :data="tableData"
-          style="width: 100%"
-          class="custom-table"
-          header-row-class-name="custom-table-header"
-      >
+      <el-table v-loading="loading" :data="tableData" style="width: 100%" class="custom-table"
+        header-row-class-name="custom-table-header">
         <el-table-column prop="id" label="工单编号" width="100" align="center" />
 
         <!-- 修复：使用插槽增加地址不显示的兜底排查 -->
@@ -58,29 +54,46 @@
           </template>
         </el-table-column>
 
+        <el-table-column prop="handlerName" label="维修人员" width="120" align="center">
+          <template #default="scope">
+            {{ scope.row.handlerName || '-' }}
+          </template>
+        </el-table-column>
 
+        <el-table-column prop="handleResult" label="处理结果" min-width="150" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.handleResult || '-' }}
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="rating" label="评价分数" width="100" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.rating">
+              <el-tag v-if="scope.row.rating >= 4" type="success" size="small">{{ scope.row.rating }}分</el-tag>
+              <el-tag v-else-if="scope.row.rating >= 3" type="warning" size="small">{{ scope.row.rating }}分</el-tag>
+              <el-tag v-else type="danger" size="small">{{ scope.row.rating }}分</el-tag>
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="evaluateContent" label="评价内容" min-width="150" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.evaluateContent || '-' }}
+          </template>
+        </el-table-column>
 
         <el-table-column prop="createTime" label="报修时间" width="180" />
 
         <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="scope">
-            <el-button
-                v-if="scope.row.status === 0"
-                size="small"
-                type="primary"
-                plain
-                @click="openDispatchDialog(scope.row)"
-            >
+            <el-button v-if="scope.row.status === 0" size="small" type="primary" plain
+              @click="openDispatchDialog(scope.row)">
               派单
             </el-button>
 
-            <el-button
-                v-if="scope.row.status === 1"
-                size="small"
-                type="success"
-                plain
-                @click="openCompleteDialog(scope.row)"
-            >
+            <el-button v-if="scope.row.status === 1" size="small" type="success" plain
+              @click="openCompleteDialog(scope.row)">
               完成
             </el-button>
 
@@ -99,40 +112,19 @@
 
       <!-- 分页组件 -->
       <div class="pagination-container">
-        <el-pagination
-            v-model:current-page="queryParams.pageNo"
-            :page-size="queryParams.pageSize"
-            :background="true"
-            layout="prev, pager, jumper, next, ->, total"
-            :total="total"
-            @current-change="fetchData"
-        />
+        <el-pagination v-model:current-page="queryParams.pageNo" :page-size="queryParams.pageSize" :background="true"
+          layout="prev, pager, jumper, next, ->, total" :total="total" @current-change="fetchData" />
       </div>
     </div>
 
     <!-- 派发工单对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        title="工单派发"
-        width="400px"
-        :before-close="handleCloseDialog"
-        custom-class="dark-dialog"
-    >
-      <el-form
-          ref="dispatchFormRef"
-          :model="dispatchForm"
-          :rules="rules"
-          label-width="100px"
-      >
+    <el-dialog v-model="dialogVisible" title="工单派发" width="400px" :before-close="handleCloseDialog"
+      custom-class="dark-dialog">
+      <el-form ref="dispatchFormRef" :model="dispatchForm" :rules="rules" label-width="100px">
         <el-form-item label="维修师傅" prop="handlerId">
           <el-select v-model="dispatchForm.handlerId" placeholder="请选择指派的维修人员" style="width: 100%;">
             <!-- 修复：动态渲染师傅列表 -->
-            <el-option
-                v-for="handler in handlerList"
-                :key="handler.id"
-                :label="handler.name"
-                :value="handler.id"
-            />
+            <el-option v-for="handler in handlerList" :key="handler.id" :label="handler.name" :value="handler.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -168,35 +160,24 @@
 
           <el-descriptions-item label="维修人员">{{ detailData.handlerName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="处理结果">{{ detailData.handleResult || '-' }}</el-descriptions-item>
-
-          <el-descriptions-item label="评价分数">{{ detailData.evaluateScore ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="处理时间">{{ detailData.handleTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="评价分数">{{ detailData.evaluateScore ?? detailData.rating ?? '-'
+            }}</el-descriptions-item>
           <el-descriptions-item label="评价内容">{{ detailData.evaluateContent || '-' }}</el-descriptions-item>
         </el-descriptions>
 
         <div style="margin-top: 12px">
           <div style="margin-bottom: 6px;font-weight:600">报修图片</div>
-          <el-image
-              v-for="(url, idx) in (detailData.imagesList || [])"
-              :key="'img-'+idx"
-              :src="url"
-              style="width: 120px; height: 120px; margin-right: 8px"
-              fit="cover"
-              :preview-src-list="detailData.imagesList || []"
-              preview-teleported
-          />
+          <el-image v-for="(url, idx) in (detailData.imagesList || [])" :key="'img-' + idx" :src="url"
+            style="width: 120px; height: 120px; margin-right: 8px" fit="cover"
+            :preview-src-list="detailData.imagesList || []" preview-teleported />
         </div>
 
         <div style="margin-top: 12px">
           <div style="margin-bottom: 6px;font-weight:600">处理图片</div>
-          <el-image
-              v-for="(url, idx) in (detailData.handleImagesList || [])"
-              :key="'himg-'+idx"
-              :src="url"
-              style="width: 120px; height: 120px; margin-right: 8px"
-              fit="cover"
-              :preview-src-list="detailData.handleImagesList || []"
-              preview-teleported
-          />
+          <el-image v-for="(url, idx) in (detailData.handleImagesList || [])" :key="'himg-' + idx" :src="url"
+            style="width: 120px; height: 120px; margin-right: 8px" fit="cover"
+            :preview-src-list="detailData.handleImagesList || []" preview-teleported />
         </div>
       </div>
     </el-skeleton>
@@ -212,29 +193,42 @@
       <el-form-item label="处理结果" prop="handleResult">
         <el-input v-model="completeForm.handleResult" type="textarea" :rows="4" placeholder="请输入处理结果（必填）" />
       </el-form-item>
-
+      
       <el-form-item label="处理图片">
-        <div style="width:100%">
-          <div v-for="(url, idx) in completeForm.handleImages" :key="idx" style="display:flex; gap:8px; margin-bottom:8px;">
-            <el-input v-model="completeForm.handleImages[idx]" placeholder="图片URL（可选）" />
-            <el-button type="danger" plain @click="removeHandleImage(idx)">删除</el-button>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <!-- 已上传的图片列表 -->
+          <div v-for="(url, idx) in completeForm.handleImages" :key="'img-' + idx" class="image-item">
+            <el-image :src="url" style="width: 120px; height: 120px;" fit="cover" 
+                      :preview-src-list="completeForm.handleImages" 
+                      preview-teleported
+                      class="upload-image">
+              <template #error>
+                <div class="image-error">图片加载失败</div>
+              </template>
+            </el-image>
+            <el-button size="small" type="danger" plain circle @click="removeHandleImage(idx)" 
+                       style="margin-top: 8px;">
+              <el-icon><Delete /></el-icon>
+            </el-button>
           </div>
-
-          <el-button type="primary" plain @click="addHandleImage">新增一张</el-button>
-
-          <div v-if="completeForm.handleImages.filter(u => u && u.trim()).length" style="margin-top: 10px">
-            <div style="margin-bottom: 6px; font-weight: 600">预览</div>
-            <el-image
-                v-for="(url, idx) in completeForm.handleImages.filter(u => u && u.trim())"
-                :key="'pv-'+idx"
-                :src="url"
-                style="width: 100px; height: 100px; margin-right: 8px"
-                fit="cover"
-                :preview-src-list="completeForm.handleImages.filter(u => u && u.trim())"
-                preview-teleported
-            />
-          </div>
+                
+          <!-- 上传按钮 -->
+          <el-upload v-if="completeForm.handleImages.length < 5"
+                     action="/admin/file/upload"
+                     :http-request="handleImageUpload"
+                     :before-upload="beforeImageUpload"
+                     :on-success="handleImageSuccess"
+                     :on-error="handleImageError"
+                     accept="image/*"
+                     multiple
+                     :limit="5 - completeForm.handleImages.length">
+            <el-button type="primary" plain>
+              <el-icon><Plus /></el-icon>
+              上传图片
+            </el-button>
+          </el-upload>
         </div>
+        <div class="form-tip">最多可上传 5 张图片，支持 jpg、png、gif 格式，单张不超过 5MB</div>
       </el-form-item>
     </el-form>
 
@@ -249,11 +243,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useRoute } from 'vue-router'
+import { getRepairPage, getRepairDetail, dispatchOrder, completeOrder, getHandlers, getDictDataByType } from '@/api/repair'
+import request from '@/utils/request'
 
 // --- 提交处理结果弹窗 ---
 
@@ -312,14 +307,29 @@ const queryParams = reactive({
   repairType: ''
 })
 
-// 预设报修类型选项
-const repairTypeOptions = ref([
-  { label: '水管维修', value: '水管维修' },
-  { label: '电路维修', value: '电路维修' },
-  { label: '门窗结构', value: '门窗结构' },
-  { label: '公共设施', value: '公共设施' },
-  { label: '其他类型', value: '其他类型' }
-])
+// 预设报修类型选项（后续可从字典表读取）
+const repairTypeOptions = ref([])
+
+// 从字典动态加载报修类型
+const fetchRepairTypes = async () => {
+  try {
+    const res: any = await getDictDataByType('repair_type')
+    repairTypeOptions.value = (res || []).map((item: any) => ({
+      label: item.dictLabel,
+      value: item.dictValue
+    }))
+  } catch (error) {
+    console.error('获取报修类型字典失败', error)
+    // 兜底选项
+    repairTypeOptions.value = [
+      { label: '水管维修', value: '水管维修' },
+      { label: '电路维修', value: '电路维修' },
+      { label: '门窗结构', value: '门窗结构' },
+      { label: '公共设施', value: '公共设施' },
+      { label: '其他类型', value: '其他类型' }
+    ]
+  }
+}
 
 const tableData = ref<any[]>([])
 const handlerList = ref<any[]>([])
@@ -327,12 +337,8 @@ const handlerList = ref<any[]>([])
 // --- 获取动态师傅列表 ---
 const fetchHandlers = async () => {
   try {
-    const res: any = await request.get('/admin/pms/repair/handlers')
-    // 按你的 request 封装，有两种常见返回：
-    // 1) res 就是 data
-    // 2) res.data 是 data
-    const list = res?.data ?? res
-    handlerList.value = (list || []).map((x: any) => ({
+    const res: any = await getHandlers()
+    handlerList.value = (res || []).map((x: any) => ({
       id: x.userId ?? x.id,
       name: x.name
     }))
@@ -354,7 +360,7 @@ const fetchData = async () => {
       size: queryParams.pageSize
     }
 
-    const res: any = await request.post('/admin/pms/repair/page', params)
+    const res: any = await getRepairPage(params)
     const pageData = res.data ? res.data : res
     let records = pageData.records || []
 
@@ -413,7 +419,7 @@ const viewDetail = async (row: any) => {
   detailLoading.value = true
 
   try {
-    const res: any = await request.post('/admin/pms/repair/detail', { orderId: oid })
+    const res: any = await getRepairDetail({ orderId: oid })
 
     // ✅ 兼容 request 的各种封装返回：VO / {data:VO} / {data:{data:VO}}
     detailData.value = res?.data?.data ?? res?.data ?? res
@@ -458,7 +464,7 @@ const submitDispatch = async () => {
     if (valid) {
       submitting.value = true
       try {
-        await request.post('/admin/pms/repair/dispatch', {
+        await dispatchOrder({
           orderId: currentOrderId.value,
           handlerId: dispatchForm.handlerId
         })
@@ -498,7 +504,6 @@ const openCompleteDialog = (row: any) => {
 }
 
 const addHandleImage = () => completeForm.handleImages.push('')
-const removeHandleImage = (idx: number) => completeForm.handleImages.splice(idx, 1)
 
 const closeCompleteDialog = () => {
   completeVisible.value = false
@@ -506,6 +511,59 @@ const closeCompleteDialog = () => {
   completeForm.handleResult = ''
   completeForm.handleImages = []
   completeFormRef.value?.resetFields?.()
+}
+
+// 图片上传相关方法
+const beforeImageUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件！')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB！')
+    return false
+  }
+  return true
+}
+
+const handleImageUpload = async (options: any) => {
+  const { file, onSuccess, onError } = options
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  try {
+    const response: string = await request.post('/admin/file/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }) as string
+    
+    if (response) {
+      // 将上传成功的 URL 添加到数组
+      completeForm.handleImages.push(response)
+      ElMessage.success('上传成功')
+      if (onSuccess) onSuccess(response)
+    }
+  } catch (error) {
+    ElMessage.error('上传失败，请重试')
+    if (onError) onError(error)
+  }
+}
+
+const handleImageSuccess = (response: any) => {
+  // 已经在 handleImageUpload 中处理了
+}
+
+const handleImageError = () => {
+  ElMessage.error('图片上传失败，请重试')
+}
+
+const removeHandleImage = (index: number) => {
+  completeForm.handleImages.splice(index, 1)
 }
 
 const submitComplete = async () => {
@@ -527,12 +585,11 @@ const submitComplete = async () => {
 
   completeSubmitting.value = true
   try {
-    const res = await request.post('/admin/pms/repair/complete', {
+    await completeOrder({
       orderId: completeOrderId.value,
       handleResult: completeForm.handleResult.trim(),
       handleImages: completeForm.handleImages.map(s => s?.trim()).filter(Boolean)
     })
-    unwrap(res) // 只是为了兼容封装；一般不需要用返回值
 
     ElMessage.success('处理结果已提交')
     closeCompleteDialog()
@@ -547,6 +604,7 @@ const submitComplete = async () => {
 
 onMounted(() => {
   fetchHandlers()
+  fetchRepairTypes()
   fetchData()
 })
 </script>
@@ -607,7 +665,8 @@ onMounted(() => {
       /* 必须使用实色，否则滚动时下方内容会透出来 */
       /* #1e293b 是 rgba(30, 41, 59) 的实色表现 */
       background-color: #1e293b !important;
-      height: calc(100% - 12px) !important; /* 避开滚动条高度，防止遮挡横向滚动条 */
+      height: calc(100% - 12px) !important;
+      /* 避开滚动条高度，防止遮挡横向滚动条 */
     }
 
     /* 针对固定列中的单元格 */
@@ -654,10 +713,12 @@ onMounted(() => {
       background-color: rgba(15, 23, 42, 0.6);
       color: #94a3b8;
     }
+
     :deep(.el-pagination.is-background .el-pager li.is-active) {
       background-color: #1890ff;
       color: #fff;
     }
+
     :deep(.el-pagination.is-background .btn-next),
     :deep(.el-pagination.is-background .btn-prev) {
       background-color: rgba(15, 23, 42, 0.6);
@@ -678,5 +739,37 @@ onMounted(() => {
   .el-form-item__label {
     color: #94a3b8;
   }
+}
+
+/* 图片上传样式 */
+.image-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-image {
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.upload-image:hover {
+  transform: scale(1.05);
+}
+
+.image-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.form-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
 }
 </style>

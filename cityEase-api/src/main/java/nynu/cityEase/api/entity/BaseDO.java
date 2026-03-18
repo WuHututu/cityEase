@@ -1,8 +1,6 @@
 package nynu.cityEase.api.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -26,12 +24,13 @@ public class BaseDO {
     @TableField("create_time")
     private LocalDateTime createTime;
 
-    @TableField("update_time")
+    @TableField(value = "update_time", fill = FieldFill.UPDATE)
     private LocalDateTime updateTime;
 
     /**
-     * 逻辑删除: 0-未删, 1-已删
+     * 逻辑删除：0-未删，1-已删
      */
-    @TableField(value = "is_deleted")
+    @TableLogic
+    @TableField("is_deleted")
     private Integer isDeleted;
 }

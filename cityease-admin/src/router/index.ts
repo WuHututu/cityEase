@@ -51,12 +51,6 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '物业费账单' }
       },
       {
-        path: 'notice',
-        name: 'Notice',
-        component: () => import('@/views/notice/index.vue'),
-        meta: { title: '公告管理' }
-      },
-      {
         path: 'mall',
         name: 'Mall',
         component: () => import('@/views/mall/index.vue'),
@@ -69,10 +63,16 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '用户管理' }
       },
       {
-        path: 'house',
-        name: 'House',
-        component: () => import('@/views/house/index.vue'),
-        meta: { title: '房屋管理(旧)' }
+        path: 'dict',
+        name: 'Dict',
+        component: () => import('@/views/dict/index.vue'),
+        meta: { title: '字典管理' }
+      },
+      {
+        path: 'notice',
+        name: 'Notice',
+        component: () => import('@/views/notice/index.vue'),
+        meta: { title: '公告管理' }
       }
     ]
   },

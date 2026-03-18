@@ -130,7 +130,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import request from '@/utils/request'
+import { pageFeeBills, saveFeeBill, updateFeeBill, deleteFeeBill, generateFeeBills, markFeePaid, markFeeUnpaid } from '@/api/fee'
 
 const unwrap = (res:any)=>res?.result ?? res?.data?.data ?? res?.data ?? res
 
@@ -149,7 +149,7 @@ const queryParams = reactive({
 const fetchData = async () => {
   loading.value = true
   try {
-    const res:any = await request.post('/admin/pms/fee/page', { ...queryParams })
+    const res: any = await pageFeeBills({ ...queryParams })
     const pageData = unwrap(res)
     tableData.value = pageData?.records || []
     total.value = Number(pageData?.total || 0)
@@ -179,6 +179,15 @@ const form = reactive({
   status: undefined as number | undefined
 })
 
+// 重置表单的辅助方法
+const resetForm = () => {
+  form.id = undefined
+  form.roomId = ''
+  form.feeMonth = ''
+  form.amount = ''
+  form.status = undefined
+}
+
 const rules = reactive<FormRules>({
   roomId: [{ required: true, message: '请输入房屋ID', trigger: 'blur' }],
   feeMonth: [{ required: true, message: '请输入月份', trigger: 'blur' }],
@@ -189,19 +198,28 @@ const openAddDialog = () => {
   dialogTitle.value = '新增账单'
   isEdit.value = false
   dialogVisible.value = true
-  Object.assign(form, { id: undefined, roomId: '', feeMonth: '', amount: '', status: undefined })
+  resetForm()
 }
 const openEditDialog = (row:any) => {
+  console.log('=== 编辑对话框打开 ===')
+  console.log('原始 row 数据:', JSON.stringify(row, null, 2))
+  console.log('row.id:', row.id, '类型:', typeof row.id)
+  console.log('row.roomId:', row.roomId, '类型:', typeof row.roomId)
+  
   dialogTitle.value = '编辑账单'
   isEdit.value = true
   dialogVisible.value = true
-  Object.assign(form, {
-    id: String(row.id),
-    roomId: String(row.roomId ?? ''),
-    feeMonth: row.feeMonth ?? '',
-    amount: String(row.amount ?? ''),
-    status: row.status
-  })
+  // 不使用 Object.assign，直接逐个赋值确保响应式更新
+  resetForm()
+  form.id = row.id ? String(row.id) : ''
+  form.roomId = row.roomId ? String(row.roomId) : ''
+  form.feeMonth = row.feeMonth ?? ''
+  form.amount = row.amount !== null && row.amount !== undefined ? String(row.amount) : ''
+  form.status = row.status
+  
+  console.log('设置后的 form 数据:', JSON.stringify(form, null, 2))
+  console.log('form.id:', form.id, '类型:', typeof form.id)
+  console.log('form.roomId:', form.roomId, '类型:', typeof form.roomId)
 }
 const closeDialog = () => formRef.value?.clearValidate?.()
 
@@ -212,51 +230,73 @@ const submitForm = async () => {
 
   submitting.value = true
   try {
-    const payload:any = {
-      id: form.id ? Number(form.id) : undefined,
-      roomId: Number(form.roomId),
+    // 调试输出：查看表单数据
+    console.log('=== 提交表单 ===')
+    console.log('表单数据:', {
+      id: form.id,
+      roomId: form.roomId,
+      feeMonth: form.feeMonth,
+      amount: form.amount,
+      status: form.status,
+      isEdit: isEdit.value
+    })
+    
+    // 确保 ID 正确处理：编辑时有 ID，新增时无 ID
+    const payload: any = {
+      roomId: form.roomId,  // 直接传字符串，不要转 Number
       feeMonth: form.feeMonth,
       amount: Number(form.amount),
       status: form.status
     }
-    if (isEdit.value) {
-      const res:any = await request.post('/admin/pms/fee/update', payload)
-      ElMessage.success(unwrap(res) || '更新成功')
+    
+    // 编辑模式且 ID 存在时才添加 ID 字段
+    if (isEdit.value && form.id) {
+      payload.id = form.id  // 直接传字符串，不要转 Number
+      console.log('编辑模式，提交 ID:', payload.id, '类型:', typeof payload.id)
     } else {
-      const res:any = await request.post('/admin/pms/fee/save', payload)
-      ElMessage.success(unwrap(res) || '保存成功')
+      console.log('新增模式或不完整 ID，不提交 ID')
+    }
+    
+    console.log('最终 payload:', JSON.stringify(payload, null, 2))
+    
+    if (isEdit.value) {
+      await updateFeeBill(payload)
+      ElMessage.success('更新成功')
+    } else {
+      await saveFeeBill(payload)
+      ElMessage.success('保存成功')
     }
     dialogVisible.value = false
     fetchData()
-  } catch {
-    ElMessage.error('保存失败')
+  } catch (e: any) {
+    ElMessage.error(e.message || '保存失败')
   } finally {
     submitting.value = false
   }
 }
 
 // operations
-const markPaid = async (row:any) => {
+const markPaid = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定标记为已缴费？', '提示', { type: 'warning' })
-    const res:any = await request.post('/admin/pms/fee/markPaid', { id: row.id })
-    ElMessage.success(unwrap(res) || '已标记缴费')
+    await markFeePaid({ id: row.id })
+    ElMessage.success('已标记缴费')
     fetchData()
   } catch {}
 }
-const markUnpaid = async (row:any) => {
+const markUnpaid = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定取消缴费？', '提示', { type: 'warning' })
-    const res:any = await request.post('/admin/pms/fee/markUnpaid', { id: row.id })
-    ElMessage.success(unwrap(res) || '已取消缴费')
+    await markFeeUnpaid(row.id)
+    ElMessage.success('已取消缴费')
     fetchData()
   } catch {}
 }
-const remove = async (row:any) => {
+const remove = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定删除该账单？', '提示', { type: 'warning' })
-    const res:any = await request.post('/admin/pms/fee/delete', { id: row.id })
-    ElMessage.success(unwrap(res) || '删除成功')
+    await deleteFeeBill(row.id)
+    ElMessage.success('删除成功')
     fetchData()
   } catch {}
 }
@@ -278,8 +318,9 @@ const doGenerate = async () => {
   }
   genLoading.value = true
   try {
-    const res:any = await request.post('/admin/pms/fee/generate', { feeMonth: genForm.feeMonth, amount: Number(genForm.amount) })
-    ElMessage.success(unwrap(res) || '生成成功')
+    const result: any = await generateFeeBills({ feeMonth: genForm.feeMonth, amount: Number(genForm.amount) })
+    const count = unwrap(result)
+    ElMessage.success(`生成成功，共生成 ${count} 条账单`)
     genVisible.value = false
     fetchData()
   } catch {

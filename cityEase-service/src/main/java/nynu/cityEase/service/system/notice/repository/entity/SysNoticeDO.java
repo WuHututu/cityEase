@@ -1,5 +1,7 @@
 package nynu.cityEase.service.system.notice.repository.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,5 +22,11 @@ public class SysNoticeDO extends BaseDO {
     
     private Integer status;
     
+    /** 是否置顶：0-否，1-是 */
+    private Integer isTop;
+    
     private Long creatorId;
+    
+    /** 封面图 URL */
+    private String coverImage;
 }

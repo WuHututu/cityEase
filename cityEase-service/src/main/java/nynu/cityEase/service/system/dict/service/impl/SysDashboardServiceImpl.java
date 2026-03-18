@@ -68,6 +68,29 @@ public class SysDashboardServiceImpl implements ISysDashboardService {
         Long notices = sysNoticeMapper.selectCount(noticeWrapper);
         vo.setPublishedNotices(notices);
 
+        // 6. 统计今日新增公告
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LambdaQueryWrapper<SysNoticeDO> todayWrapper = new LambdaQueryWrapper<>();
+        todayWrapper.eq(SysNoticeDO::getStatus, 1)
+                   .ge(SysNoticeDO::getCreateTime, todayStart);
+        Long todayNotices = sysNoticeMapper.selectCount(todayWrapper);
+        vo.setTodayNotices(todayNotices);
+
+        // 7. 统计本周新增公告
+        LocalDateTime weekStart = LocalDate.now().minusDays(6).atStartOfDay();
+        LambdaQueryWrapper<SysNoticeDO> weekWrapper = new LambdaQueryWrapper<>();
+        weekWrapper.eq(SysNoticeDO::getStatus, 1)
+                   .ge(SysNoticeDO::getCreateTime, weekStart);
+        Long weekNotices = sysNoticeMapper.selectCount(weekWrapper);
+        vo.setWeekNotices(weekNotices);
+
+        // 8. 统计置顶公告
+        LambdaQueryWrapper<SysNoticeDO> topWrapper = new LambdaQueryWrapper<>();
+        topWrapper.eq(SysNoticeDO::getStatus, 1)
+                  .eq(SysNoticeDO::getIsTop, 1);
+        Long topNotices = sysNoticeMapper.selectCount(topWrapper);
+        vo.setTopNotices(topNotices);
+
         return vo;
     }
 

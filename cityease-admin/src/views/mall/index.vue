@@ -2,7 +2,8 @@
   <div class="page">
     <div class="toolbar">
       <div class="left">
-        <el-input v-model="query.keyword" placeholder="按商品名搜索" style="width: 260px" clearable @keyup.enter="fetchList" />
+        <el-input v-model="query.keyword" placeholder="按商品名搜索" style="width: 260px" clearable
+          @keyup.enter="fetchList" />
         <el-select v-model="query.status" placeholder="上下架" style="width: 140px" clearable @change="fetchList">
           <el-option :value="1" label="上架" />
           <el-option :value="0" label="下架" />
@@ -18,12 +19,13 @@
       <el-table-column prop="id" label="ID" width="190" />
       <el-table-column label="图片" width="90">
         <template #default="{ row }">
-          <el-image v-if="row.imageUrl" :src="row.imageUrl" :preview-src-list="[row.imageUrl]" fit="cover" style="width: 56px; height: 56px; border-radius: 8px" />
+          <el-image v-if="row.imageUrl" :src="row.imageUrl" :preview-src-list="[row.imageUrl]" fit="cover"
+            style="width: 56px; height: 56px; border-radius: 8px" />
           <span v-else style="color:#94a3b8;">-</span>
         </template>
       </el-table-column>
       <el-table-column prop="name" label="商品名" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="points" label="积分" width="120" />
+      <el-table-column prop="pointsPrice" label="积分" width="120" />
       <el-table-column prop="stock" label="库存" width="100" />
       <el-table-column prop="status" label="状态" width="110">
         <template #default="{ row }">
@@ -43,13 +45,8 @@
     </el-table>
 
     <div class="pager">
-      <el-pagination
-        v-model:current-page="query.current"
-        :page-size="query.size"
-        layout="prev, pager, next, total"
-        :total="total"
-        @current-change="fetchList"
-      />
+      <el-pagination v-model:current-page="query.current" :page-size="query.size" layout="prev, pager, next, total"
+        :total="total" @current-change="fetchList" />
     </div>
 
     <el-dialog v-model="dialog.visible" :title="dialog.title" width="640px" destroy-on-close>
@@ -57,8 +54,8 @@
         <el-form-item label="商品名" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名" />
         </el-form-item>
-        <el-form-item label="积分" prop="points">
-          <el-input v-model="form.points" placeholder="例如：100" />
+        <el-form-item label="积分" prop="pointsPrice">
+          <el-input v-model="form.pointsPrice" placeholder="例如：100" />
         </el-form-item>
         <el-form-item label="库存" prop="stock">
           <el-input-number v-model="form.stock" :min="0" :max="999999" />
@@ -69,8 +66,8 @@
             <el-radio :label="0">下架</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="主图URL" prop="imageUrl">
-          <el-input v-model="form.imageUrl" placeholder="先用URL占位（后续再接入上传）" />
+        <el-form-item label="主图" prop="imageUrl">
+          <ImageUploader v-model="form.imageUrl" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="4" placeholder="可选" />
@@ -78,7 +75,7 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialog.visible=false">取消</el-button>
+        <el-button @click="dialog.visible = false">取消</el-button>
         <el-button type="primary" :loading="dialog.saving" @click="onSave">保存</el-button>
       </template>
     </el-dialog>
@@ -89,6 +86,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageGoods, saveGoods, deleteGoods, changeGoodsStatus } from '@/api/mall'
+import ImageUploader from '@/components/ImageUploader.vue'
 
 const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
 
@@ -127,7 +125,7 @@ const formRef = ref()
 const form = reactive<any>({
   id: null,
   name: '',
-  points: '',
+  pointsPrice: '',
   stock: 0,
   status: 1,
   imageUrl: '',
@@ -136,14 +134,15 @@ const form = reactive<any>({
 
 const rules = {
   name: [{ required: true, message: '请输入商品名', trigger: 'blur' }],
-  points: [{ required: true, message: '请输入积分', trigger: 'blur' }],
-  stock: [{ required: true, message: '请输入库存', trigger: 'change' }]
+  pointsPrice: [{ required: true, message: '请输入积分', trigger: 'blur' }],
+  stock: [{ required: true, message: '请输入库存', trigger: 'change' }],
+  imageUrl: [{ required: true, message: '请上传商品主图', trigger: 'change' }]
 }
 
 const resetForm = () => {
   form.id = null
   form.name = ''
-  form.points = ''
+  form.pointsPrice = ''
   form.stock = 0
   form.status = 1
   form.imageUrl = ''
@@ -159,7 +158,7 @@ const openCreate = () => {
 const openEdit = (row: any) => {
   form.id = row.id
   form.name = row.name
-  form.points = row.points
+  form.pointsPrice = row.pointsPrice
   form.stock = row.stock
   form.status = row.status
   form.imageUrl = row.imageUrl
@@ -175,7 +174,7 @@ const onSave = async () => {
     await saveGoods({
       id: form.id,
       name: form.name,
-      points: form.points,
+      pointsPrice: form.pointsPrice,
       stock: form.stock,
       status: form.status,
       imageUrl: form.imageUrl,
@@ -205,8 +204,31 @@ const toggleStatus = async (row: any) => {
 </script>
 
 <style scoped>
-.page { background: #0b1220; padding: 12px; border-radius: 12px; border: 1px solid rgba(148,163,184,.12); }
-.toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap: 12px; }
-.toolbar .left { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
-.pager { display:flex; justify-content:flex-end; margin-top: 12px; }
+.page {
+  background: #0b1220;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, .12);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.toolbar .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
 </style>

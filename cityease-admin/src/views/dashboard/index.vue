@@ -8,7 +8,9 @@
     <el-row :gutter="20" class="kpi-row">
       <el-col :span="6">
         <div class="kpi-card tech-blue" @click="navigateToHouse()" style="cursor: pointer;">
-          <div class="icon-wrapper"><el-icon><OfficeBuilding /></el-icon></div>
+          <div class="icon-wrapper"><el-icon>
+              <OfficeBuilding />
+            </el-icon></div>
           <div class="info">
             <div class="label">房屋总数</div>
             <div class="value">
@@ -20,8 +22,10 @@
       </el-col>
 
       <el-col :span="6">
-        <div class="kpi-card mint-green">
-          <div class="icon-wrapper"><el-icon><User /></el-icon></div>
+        <div class="kpi-card mint-green" @click="navigateToBind()" style="cursor: pointer;">
+          <div class="icon-wrapper"><el-icon>
+              <User />
+            </el-icon></div>
           <div class="info">
             <div class="label">认证业主/家属</div>
             <div class="value">
@@ -33,8 +37,11 @@
       </el-col>
 
       <el-col :span="6">
-        <div class="kpi-card warning-orange" :class="{ 'pulse-alert': metrics.pendingRepairs > 0 }" @click="navigateToRepair(0)" style="cursor: pointer;">
-          <div class="icon-wrapper"><el-icon><Warning /></el-icon></div>
+        <div class="kpi-card warning-orange" :class="{ 'pulse-alert': metrics.pendingRepairs > 0 }"
+          @click="navigateToRepair(0)" style="cursor: pointer;">
+          <div class="icon-wrapper"><el-icon>
+              <Warning />
+            </el-icon></div>
           <div class="info">
             <div class="label">待派发工单</div>
             <div class="value">
@@ -47,7 +54,9 @@
 
       <el-col :span="6">
         <div class="kpi-card tech-blue" @click="navigateToRepair(1)" style="cursor: pointer;">
-          <div class="icon-wrapper"><el-icon><Tools /></el-icon></div>
+          <div class="icon-wrapper"><el-icon>
+              <Tools />
+            </el-icon></div>
           <div class="info">
             <div class="label">处理中工单</div>
             <div class="value">
@@ -67,11 +76,25 @@
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="chart-card">
+        <div class="chart-card" @click="navigateToNotice()" style="cursor: pointer;">
           <div class="card-header">系统公告概览</div>
           <div class="notice-info">
             <div class="big-num">{{ metrics.publishedNotices }}</div>
             <p>已发布公告总数</p>
+          </div>
+          <div class="notice-stats">
+            <div class="stat-item">
+              <span class="label">今日：</span>
+              <span class="value today">{{ metrics.todayNotices }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">本周：</span>
+              <span class="value week">{{ metrics.weekNotices }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">置顶：</span>
+              <span class="value top">{{ metrics.topNotices }}</span>
+            </div>
           </div>
         </div>
       </el-col>
@@ -85,7 +108,7 @@ import { OfficeBuilding, User, Warning, Tools } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 
 interface DashboardMetrics {
   totalRooms: number
@@ -93,6 +116,9 @@ interface DashboardMetrics {
   pendingRepairs: number
   processingRepairs: number
   publishedNotices: number
+  todayNotices: number
+  weekNotices: number
+  topNotices: number
 }
 
 // 定义图表数据类型
@@ -109,7 +135,10 @@ const metrics = ref<DashboardMetrics>({
   authenticatedUsers: 0,
   pendingRepairs: 0,
   processingRepairs: 0,
-  publishedNotices: 0
+  publishedNotices: 0,
+  todayNotices: 0,
+  weekNotices: 0,
+  topNotices: 0
 })
 
 // 图表相关引用
@@ -140,14 +169,14 @@ const initChart = (chartData: any = null) => {
     }
 
     chartInstance = echarts.init(chartRef.value);
-    
+
     let xAxisData: string[] = [];
     let seriesData: any[] = [];
-    
+
     if (chartData && (chartData.xAxisData || chartData.xaxisData) && chartData.series) {
       // 兼容大小写不同的字段名
       xAxisData = chartData.xAxisData || chartData.xaxisData;
-      
+
       seriesData = chartData.series.map((s: any, idx: number) => ({
         name: s.name,
         type: 'line',
@@ -176,9 +205,9 @@ const initChart = (chartData: any = null) => {
         }
       ];
     }
-    
+
     const option = {
-      tooltip: { 
+      tooltip: {
         trigger: 'axis',
         formatter: (params: any) => {
           let tipHtml = params[0].axisValue + '<br/>';
@@ -235,7 +264,21 @@ const navigateToRepair = (status: number) => {
 // 跳转到房屋管理页面
 const navigateToHouse = () => {
   router.push({
-    name: 'House'
+    name: 'Room'
+  })
+}
+
+// 跳转到绑定审核页面
+const navigateToBind = () => {
+  router.push({
+    name: 'BindAudit'
+  })
+}
+
+// 跳转到公告管理页面
+const navigateToNotice = () => {
+  router.push({
+    name: 'Notice'
   })
 }
 
@@ -288,14 +331,230 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 /* 此处保留你原有的 CSS 样式，无需改动 */
-.dashboard-container { color: #e2e8f0; }
-.welcome-box { margin-bottom: 24px; h2 { margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #fff; .subtitle { font-size: 14px; color: #1890ff; margin-left: 10px; font-weight: normal; letter-spacing: 1px; } } p { margin: 0; color: #94a3b8; font-size: 14px; } }
-.kpi-row { margin-bottom: 24px; }
-.kpi-card { display: flex; align-items: center; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 24px 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; &:hover { transform: translateY(-5px); } .icon-wrapper { width: 56px; height: 56px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 28px; margin-right: 20px; } .info { flex: 1; .label { font-size: 14px; color: #94a3b8; margin-bottom: 8px; } .value { color: #fff; .num { font-size: 28px; font-weight: bold; font-family: 'Din', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .unit { font-size: 12px; color: #64748b; margin-left: 4px; } } } }
-.tech-blue { &:hover { box-shadow: 0 10px 20px rgba(24, 144, 255, 0.15); } .icon-wrapper { background: rgba(24, 144, 255, 0.1); color: #1890ff; } }
-.mint-green { &:hover { box-shadow: 0 10px 20px rgba(0, 185, 107, 0.15); } .icon-wrapper { background: rgba(0, 185, 107, 0.1); color: #00B96B; } }
-.warning-orange { &:hover { box-shadow: 0 10px 20px rgba(250, 140, 22, 0.15); } .icon-wrapper { background: rgba(250, 140, 22, 0.1); color: #FA8C16; } }
-.pulse-alert { position: relative; &::after { content: ''; position: absolute; top: 15px; right: 15px; width: 10px; height: 10px; background-color: #ff4d4f; border-radius: 50%; animation: pulse 2s infinite; } }
-@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 77, 79, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0); } }
-.chart-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; height: 350px; display: flex; flex-direction: column; .card-header { font-size: 16px; font-weight: 500; color: #e2e8f0; margin-bottom: 20px; } .notice-info { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; .big-num { font-size: 72px; font-weight: bold; color: #1890ff; background: linear-gradient(135deg, #1890ff, #00f0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; } p { color: #94a3b8; margin-top: 10px; } } }
+.dashboard-container {
+  color: #e2e8f0;
+}
+
+.welcome-box {
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #fff;
+
+    .subtitle {
+      font-size: 14px;
+      color: #1890ff;
+      margin-left: 10px;
+      font-weight: normal;
+      letter-spacing: 1px;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+}
+
+.kpi-row {
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  .icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    margin-right: 20px;
+  }
+
+  .info {
+    flex: 1;
+
+    .label {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      color: #fff;
+
+      .num {
+        font-size: 28px;
+        font-weight: bold;
+        font-family: 'Din', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      .unit {
+        font-size: 12px;
+        color: #64748b;
+        margin-left: 4px;
+      }
+    }
+  }
+}
+
+.tech-blue {
+  &:hover {
+    box-shadow: 0 10px 20px rgba(24, 144, 255, 0.15);
+  }
+
+  .icon-wrapper {
+    background: rgba(24, 144, 255, 0.1);
+    color: #1890ff;
+  }
+}
+
+.mint-green {
+  &:hover {
+    box-shadow: 0 10px 20px rgba(0, 185, 107, 0.15);
+  }
+
+  .icon-wrapper {
+    background: rgba(0, 185, 107, 0.1);
+    color: #00B96B;
+  }
+}
+
+.warning-orange {
+  &:hover {
+    box-shadow: 0 10px 20px rgba(250, 140, 22, 0.15);
+  }
+
+  .icon-wrapper {
+    background: rgba(250, 140, 22, 0.1);
+    color: #FA8C16;
+  }
+}
+
+.pulse-alert {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 10px;
+    height: 10px;
+    background-color: #ff4d4f;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(255, 77, 79, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+  }
+}
+
+.chart-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+
+  .card-header {
+    font-size: 16px;
+    font-weight: 500;
+    color: #e2e8f0;
+    margin-bottom: 20px;
+  }
+
+  .notice-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .big-num {
+      font-size: 72px;
+      font-weight: bold;
+      color: #1890ff;
+      background: linear-gradient(135deg, #1890ff, #00f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p {
+      color: #94a3b8;
+      margin-top: 10px;
+    }
+  }
+
+  .notice-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      .label {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+
+      .value {
+        font-size: 16px;
+        font-weight: 600;
+
+        &.today {
+          color: #52c41a;
+        }
+
+        &.week {
+          color: #1890ff;
+        }
+
+        &.top {
+          color: #fa8c16;
+        }
+      }
+    }
+  }
+}
 </style>

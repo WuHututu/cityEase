@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import nynu.cityEase.api.vo.ResVo;
-import nynu.cityEase.api.vo.StatusEnum;
+import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.api.vo.mall.PointGoodsPageReq;
 import nynu.cityEase.api.vo.mall.PointGoodsSaveReq;
 import nynu.cityEase.api.vo.mall.PointGoodsVO;

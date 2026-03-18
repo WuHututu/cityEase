@@ -2,6 +2,8 @@ package nynu.cityEase.service.pms.fee.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import nynu.cityEase.api.exception.ExceptionUtil;
@@ -9,10 +11,10 @@ import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.api.vo.pms.*;
 import nynu.cityEase.service.pms.fee.repository.entity.PmsFeeBillDO;
 import nynu.cityEase.service.pms.fee.repository.entity.PmsPublicAreaDO;
-import nynu.cityEase.service.pms.fee.repository.entity.PmsRoomDO;
+import nynu.cityEase.service.pms.repository.entity.RoomDO;
 import nynu.cityEase.service.pms.fee.repository.mapper.PmsFeeBillMapper;
 import nynu.cityEase.service.pms.fee.repository.mapper.PmsPublicAreaMapper;
-import nynu.cityEase.service.pms.fee.repository.mapper.PmsRoomMapper;
+import nynu.cityEase.service.pms.repository.mapper.RoomMapper;
 import nynu.cityEase.service.pms.fee.service.IFeeBillService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBillDO> implements IFeeBillService {
 
     @Resource
-    private PmsRoomMapper roomMapper;
+    private RoomMapper roomMapper;
 
     @Resource
     private PmsPublicAreaMapper areaMapper;
@@ -53,10 +55,10 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         if (StrUtil.isNotBlank(req.getRoomKeyword())) {
             String kw = req.getRoomKeyword().trim();
             // 查匹配的 roomIds
-            List<Long> roomIds = roomMapper.selectList(new LambdaQueryWrapper<PmsRoomDO>()
-                            .eq(PmsRoomDO::getIsDeleted, 0)
-                            .like(PmsRoomDO::getRoomNum, kw))
-                    .stream().map(PmsRoomDO::getId).collect(Collectors.toList());
+            List<Long> roomIds = roomMapper.selectList(new LambdaQueryWrapper<RoomDO>()
+                            .eq(RoomDO::getIsDeleted, 0)
+                            .like(RoomDO::getRoomNum, kw))
+                    .stream().map(RoomDO::getId).collect(Collectors.toList());
             if (roomIds.isEmpty()) {
                 Page<FeeBillPageVO> empty = new Page<>(doPage.getCurrent(), doPage.getSize(), 0);
                 empty.setRecords(Collections.emptyList());
@@ -66,14 +68,14 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         }
 
         // 批量补充 roomNum / fullAddress
-        Map<Long, PmsRoomDO> roomMap = getRoomMap(records);
+        Map<Long, RoomDO> roomMap = getRoomMap(records);
         Map<Long, PmsPublicAreaDO> areaMap = getAreaMap(roomMap.values());
 
         List<FeeBillPageVO> voList = new ArrayList<>();
         for (PmsFeeBillDO d : records) {
             FeeBillPageVO vo = new FeeBillPageVO();
             BeanUtils.copyProperties(d, vo);
-            PmsRoomDO room = roomMap.get(d.getRoomId());
+            RoomDO room = roomMap.get(d.getRoomId());
             if (room != null) {
                 vo.setRoomNum(room.getRoomNum());
                 vo.setFullAddress(buildFullAddress(room.getAreaId(), areaMap, room.getRoomNum()));
@@ -96,7 +98,7 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         FeeBillDetailVO vo = new FeeBillDetailVO();
         BeanUtils.copyProperties(d, vo);
 
-        PmsRoomDO room = roomMapper.selectById(d.getRoomId());
+        RoomDO room = roomMapper.selectById(d.getRoomId());
         if (room != null) {
             vo.setRoomNum(room.getRoomNum());
             Map<Long, PmsPublicAreaDO> areaMap = getAreaMap(Collections.singletonList(room));
@@ -112,7 +114,7 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
             throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "参数不完整");
         }
         // 简单校验房屋存在
-        PmsRoomDO room = roomMapper.selectById(req.getRoomId());
+        RoomDO room = roomMapper.selectById(req.getRoomId());
         if (room == null || (room.getIsDeleted() != null && room.getIsDeleted() == 1)) {
             throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "房屋不存在");
         }
@@ -151,8 +153,10 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         PmsFeeBillDO d = this.getById(id);
         if (d == null) return;
         d.setIsDeleted(1);
-        d.setUpdateTime(LocalDateTime.now());
-        this.updateById(d);
+        LambdaUpdateWrapper<PmsFeeBillDO> up = new LambdaUpdateWrapper<>();
+        up.set(PmsFeeBillDO::getIsDeleted, 1)
+                .eq(PmsFeeBillDO::getId, id);
+        update(up);
     }
 
     @Override
@@ -164,12 +168,12 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         String feeMonth = req.getFeeMonth().trim();
 
         // 所有有效房屋
-        List<PmsRoomDO> rooms = roomMapper.selectList(new LambdaQueryWrapper<PmsRoomDO>()
-                .eq(PmsRoomDO::getIsDeleted, 0));
+        List<RoomDO> rooms = roomMapper.selectList(new LambdaQueryWrapper<RoomDO>()
+                .eq(RoomDO::getIsDeleted, 0));
 
         if (rooms.isEmpty()) return 0;
 
-        List<Long> roomIds = rooms.stream().map(PmsRoomDO::getId).collect(Collectors.toList());
+        List<Long> roomIds = rooms.stream().map(RoomDO::getId).collect(Collectors.toList());
 
         // 已存在账单的房屋（同月）
         List<PmsFeeBillDO> exists = this.list(new LambdaQueryWrapper<PmsFeeBillDO>()
@@ -181,7 +185,7 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
 
         int created = 0;
         LocalDateTime now = LocalDateTime.now();
-        for (PmsRoomDO room : rooms) {
+        for (RoomDO room : rooms) {
             if (existRoomIds.contains(room.getId())) continue;
 
             PmsFeeBillDO d = new PmsFeeBillDO();
@@ -229,15 +233,15 @@ public class FeeBillServiceImpl extends ServiceImpl<PmsFeeBillMapper, PmsFeeBill
         this.updateById(d);
     }
 
-    private Map<Long, PmsRoomDO> getRoomMap(List<PmsFeeBillDO> bills) {
+    private Map<Long, RoomDO> getRoomMap(List<PmsFeeBillDO> bills) {
         Set<Long> roomIds = bills.stream().map(PmsFeeBillDO::getRoomId).filter(Objects::nonNull).collect(Collectors.toSet());
         if (roomIds.isEmpty()) return Collections.emptyMap();
-        List<PmsRoomDO> rooms = roomMapper.selectList(new LambdaQueryWrapper<PmsRoomDO>().in(PmsRoomDO::getId, roomIds));
-        return rooms.stream().collect(Collectors.toMap(PmsRoomDO::getId, x -> x, (a, b) -> a));
+        List<RoomDO> rooms = roomMapper.selectList(new LambdaQueryWrapper<RoomDO>().in(RoomDO::getId, roomIds));
+        return rooms.stream().collect(Collectors.toMap(RoomDO::getId, x -> x, (a, b) -> a));
     }
 
-    private Map<Long, PmsPublicAreaDO> getAreaMap(Collection<PmsRoomDO> rooms) {
-        Set<Long> areaIds = rooms.stream().map(PmsRoomDO::getAreaId).filter(Objects::nonNull).collect(Collectors.toSet());
+    private Map<Long, PmsPublicAreaDO> getAreaMap(Collection<RoomDO> rooms) {
+        Set<Long> areaIds = rooms.stream().map(RoomDO::getAreaId).filter(Objects::nonNull).collect(Collectors.toSet());
         if (areaIds.isEmpty()) return Collections.emptyMap();
 
         // 为了构建完整路径，需要把所有父节点也取出来

@@ -10,6 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  optimizeDeps: {
+    include: ['element-plus', 'axios'],
+    exclude: ['@wangeditor/editor-for-vue']
+  },
   server: {
     port: 5173,
     proxy: {

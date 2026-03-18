@@ -44,10 +44,16 @@ public class UserDO extends BaseDO implements Serializable {
     private Integer loginType;
 
     /**
-     * 第三方用户ID
+     * 第三方用户 ID
      */
     @TableField(value = "third_account_id")
     private String thirdAccountId;
+    
+    /**
+     * 用户角色：0-普通用户，1-超管，2-物业，3-业主，4-维修工
+     */
+    @TableField(value = "user_role")
+    private Integer userRole;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

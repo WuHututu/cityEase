@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import nynu.cityEase.api.vo.StatusEnum;
+import nynu.cityEase.api.vo.constants.StatusEnum;
 import nynu.cityEase.api.vo.mall.PointGoodsPageReq;
 import nynu.cityEase.api.vo.mall.PointGoodsSaveReq;
 import nynu.cityEase.api.vo.mall.PointGoodsVO;
@@ -26,7 +26,7 @@ public class PointGoodsServiceImpl extends ServiceImpl<PointGoodsMapper, PointGo
         vo.setName(d.getName());
         vo.setDescription(d.getDescription());
         vo.setImageUrl(d.getImageUrl());
-        vo.setPoints(d.getPoints());
+        vo.setPointsPrice(d.getPointsPrice());
         vo.setStock(d.getStock());
         vo.setStatus(d.getStatus());
         vo.setCreateTime(d.getCreateTime());
@@ -71,7 +71,7 @@ public class PointGoodsServiceImpl extends ServiceImpl<PointGoodsMapper, PointGo
         if (!StringUtils.hasText(req.getName())) {
             throw new IllegalArgumentException(StatusEnum.valueOf("缺少商品名称").getMsg());
         }
-        if (req.getPoints() == null) {
+        if (req.getPointsPrice() == null) {
             throw new IllegalArgumentException(StatusEnum.valueOf("缺少积分").getMsg());
         }
         if (req.getStock() == null) req.setStock(0);
@@ -83,7 +83,7 @@ public class PointGoodsServiceImpl extends ServiceImpl<PointGoodsMapper, PointGo
             d.setName(req.getName());
             d.setDescription(req.getDescription());
             d.setImageUrl(req.getImageUrl());
-            d.setPoints(req.getPoints());
+            d.setPointsPrice(req.getPointsPrice());
             d.setStock(req.getStock());
             d.setStatus(req.getStatus());
             d.setCreateTime(now);
@@ -99,7 +99,7 @@ public class PointGoodsServiceImpl extends ServiceImpl<PointGoodsMapper, PointGo
         d.setName(req.getName());
         d.setDescription(req.getDescription());
         d.setImageUrl(req.getImageUrl());
-        d.setPoints(req.getPoints());
+        d.setPointsPrice(req.getPointsPrice());
         d.setStock(req.getStock());
         d.setStatus(req.getStatus());
         d.setUpdateTime(now);

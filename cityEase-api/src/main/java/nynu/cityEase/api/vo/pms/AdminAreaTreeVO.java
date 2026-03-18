@@ -31,4 +31,10 @@ public class AdminAreaTreeVO implements Serializable {
 
   @ApiModelProperty("子节点")
   private List<AdminAreaTreeVO> children;
+
+  @ApiModelProperty("区域类型（字典值）")
+  private String areaType;
+
+  @ApiModelProperty("完整地址（拼接后的）")
+  private String fullAddress;
 }

@@ -2,32 +2,33 @@
   <div class="layout">
     <div class="sidebar" :class="{ collapse: isCollapse }">
       <div class="brand">
-        <el-icon><Platform /></el-icon>
+        <el-icon>
+          <Platform />
+        </el-icon>
         <span v-if="!isCollapse">CityEase</span>
       </div>
 
-      <el-menu
-        active-text-color="#00f0ff"
-        background-color="#0f172a"
-        class="el-menu-vertical"
-        :default-active="route.path"
-        text-color="#94a3b8"
-        :collapse="isCollapse"
-        router
-      >
+      <el-menu active-text-color="#00f0ff" background-color="#0f172a" class="el-menu-vertical"
+        :default-active="route.path" text-color="#94a3b8" :collapse="isCollapse" router>
         <el-menu-item index="/dashboard">
-          <el-icon><DataLine /></el-icon>
+          <el-icon>
+            <DataLine />
+          </el-icon>
           <template #title>数据大屏</template>
         </el-menu-item>
 
         <el-menu-item index="/repair">
-          <el-icon><Tools /></el-icon>
+          <el-icon>
+            <Tools />
+          </el-icon>
           <template #title>报修工单</template>
         </el-menu-item>
 
         <el-sub-menu index="pms">
           <template #title>
-            <el-icon><House /></el-icon>
+            <el-icon>
+              <House />
+            </el-icon>
             <span>房屋/区域</span>
           </template>
           <el-menu-item index="/area">公共区域管理</el-menu-item>
@@ -35,27 +36,41 @@
         </el-sub-menu>
 
         <el-menu-item index="/bind">
-          <el-icon><Connection /></el-icon>
+          <el-icon>
+            <Connection />
+          </el-icon>
           <template #title>绑定审核</template>
         </el-menu-item>
 
         <el-menu-item index="/fee">
-          <el-icon><Money /></el-icon>
+          <el-icon>
+            <Money />
+          </el-icon>
           <template #title>物业费账单</template>
         </el-menu-item>
 
-        <el-menu-item index="/notice">
-          <el-icon><Bell /></el-icon>
-          <template #title>公告管理</template>
-        </el-menu-item>
+        <el-sub-menu index="system">
+          <template #title>
+            <el-icon>
+              <Setting />
+            </el-icon>
+            <span>系统管理</span>
+          </template>
+          <el-menu-item index="/dict">字典管理</el-menu-item>
+          <el-menu-item index="/notice">公告管理</el-menu-item>
+        </el-sub-menu>
 
         <el-menu-item index="/mall">
-          <el-icon><ShoppingCart /></el-icon>
+          <el-icon>
+            <ShoppingCart />
+          </el-icon>
           <template #title>积分商城</template>
         </el-menu-item>
 
         <el-menu-item index="/user">
-          <el-icon><User /></el-icon>
+          <el-icon>
+            <User />
+          </el-icon>
           <template #title>用户管理</template>
         </el-menu-item>
       </el-menu>
@@ -77,7 +92,9 @@
             <span class="user">
               <el-avatar :size="28" :src="userInfo?.avatar" />
               <span class="name">{{ userInfo?.username || '管理员' }}</span>
-              <el-icon><ArrowDown /></el-icon>
+              <el-icon>
+                <ArrowDown />
+              </el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -100,7 +117,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, Bell, ShoppingCart, Connection } from '@element-plus/icons-vue'
+import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, Bell, ShoppingCart, Connection, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,7 +139,7 @@ const fetchUser = async () => {
 
 const logout = async () => {
   try {
-    await request.get('/admin/user/logout')
+    await request.post('/logout')
   } catch {
     // ignore
   }
@@ -135,13 +152,66 @@ onMounted(fetchUser)
 </script>
 
 <style scoped>
-.layout { display: flex; height: 100vh; background: #0b1220; }
-.sidebar { width: 220px; background: #0f172a; color: #fff; display:flex; flex-direction:column; }
-.sidebar.collapse { width: 64px; }
-.brand { height: 56px; display:flex; align-items:center; gap:10px; padding:0 16px; font-weight:700; }
-.main { flex:1; display:flex; flex-direction:column; }
-.header { height: 56px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; background:#0b1220; border-bottom:1px solid rgba(148,163,184,.12); }
-.content { padding: 12px; overflow:auto; }
-.user { display:flex; align-items:center; gap:8px; cursor:pointer; color:#e2e8f0; }
-.name { max-width: 120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.layout {
+  display: flex;
+  height: 100vh;
+  background: #0b1220;
+}
+
+.sidebar {
+  width: 220px;
+  background: #0f172a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapse {
+  width: 64px;
+}
+
+.brand {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  font-weight: 700;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: #0b1220;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+
+.content {
+  padding: 12px;
+  overflow: auto;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #e2e8f0;
+}
+
+.name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 </style>

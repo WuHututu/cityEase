@@ -46,4 +46,53 @@ public class SysDictDataServiceImpl extends ServiceImpl<SysDictDataMapper, SysDi
 
         return list;
     }
+
+    @Override
+    public List<SysDictDataDO> list(String dictType, String label) {
+        return this.list(new LambdaQueryWrapper<SysDictDataDO>()
+                .eq(StrUtil.isNotBlank(dictType), SysDictDataDO::getDictType, dictType)
+                .like(StrUtil.isNotBlank(label), SysDictDataDO::getDictLabel, label)
+                .orderByAsc(SysDictDataDO::getDictSort));
+    }
+
+    @Override
+    public SysDictDataDO getById(Long id) {
+        return super.getById(id);  // ✅ 调用父类方法
+    }
+
+    @Override
+    public boolean save(SysDictDataDO entity) {
+        boolean result = super.save(entity);
+        // 清除对应字典类型的缓存
+        clearCacheByType(entity.getDictType());
+        return result;
+    }
+
+    @Override
+    public boolean updateById(SysDictDataDO entity) {
+        boolean result = super.updateById(entity);
+        // 清除对应字典类型的缓存
+        clearCacheByType(entity.getDictType());
+        return result;
+    }
+
+    @Override
+    public boolean deleteById(Long id) {
+        SysDictDataDO entity = this.getById(id);
+        boolean result = super.removeById(id);
+        // 清除对应字典类型的缓存
+        if (entity != null) {
+            clearCacheByType(entity.getDictType());
+        }
+        return result;
+    }
+
+    /**
+     * 清除指定字典类型的缓存
+     */
+    private void clearCacheByType(String dictType) {
+        if (StrUtil.isNotBlank(dictType)) {
+            redisTemplate.delete(DICT_CACHE_PREFIX + dictType);
+        }
+    }
 }

@@ -23,16 +23,8 @@
             </div>
           </template>
 
-          <el-tree
-            ref="treeRef"
-            :data="treeData"
-            node-key="id"
-            :props="treeProps"
-            highlight-current
-            default-expand-all
-            :filter-node-method="filterNode"
-            @node-click="handleNodeClick"
-          >
+          <el-tree ref="treeRef" :data="treeData" node-key="id" :props="treeProps" highlight-current default-expand-all
+            :filter-node-method="filterNode" @node-click="handleNodeClick">
             <template #default="{ node, data }">
               <div class="tree-node">
                 <span class="label">{{ node.label }}</span>
@@ -56,11 +48,13 @@
           </template>
 
           <div v-if="currentNode" class="current">
-            <el-descriptions :column="2" border>
+            <el-descriptions :column="2" border class="custom-descriptions">
               <el-descriptions-item label="ID">{{ currentNode.id }}</el-descriptions-item>
               <el-descriptions-item label="名称">{{ currentNode.areaName || currentNode.name }}</el-descriptions-item>
-              <el-descriptions-item label="类型">{{ currentNode.areaType ?? '-' }}</el-descriptions-item>
-              <el-descriptions-item label="地址">{{ currentNode.areaAddress ?? '-' }}</el-descriptions-item>
+              <el-descriptions-item label="类型">{{ formatAreaType(currentNode.areaType) ?? '-' }}</el-descriptions-item>
+              <el-descriptions-item label="地址">{{ currentNode.fullAddress ?? '-' }}</el-descriptions-item>
+              <el-descriptions-item label="层级">{{ currentNode.level ?? '-' }}</el-descriptions-item>
+              <el-descriptions-item label="排序">{{ currentNode.sort ?? '-' }}</el-descriptions-item>
             </el-descriptions>
             <div style="margin-top: 12px">
               <el-button type="primary" plain @click="openAddDialog(currentNode)">在此下新增</el-button>
@@ -80,10 +74,17 @@
           <el-input v-model="form.areaName" placeholder="必填" />
         </el-form-item>
         <el-form-item label="类型" prop="areaType">
-          <el-input v-model="form.areaType" placeholder="可选，如：楼栋/单元/公共区" />
+          <el-select v-model="form.areaType" placeholder="请选择区域类型" clearable :disabled="isEdit" style="width: 100%">
+            <el-option label="小区" value="1" />
+            <el-option label="分期" value="2" />
+            <el-option label="楼栋" value="3" />
+            <el-option label="单元" value="4" />
+            <el-option label="楼层" value="5" />
+            <el-option label="公共区域" value="6" />
+          </el-select>
         </el-form-item>
         <el-form-item label="地址">
-          <el-input v-model="form.areaAddress" placeholder="可选" />
+          <el-input v-model="form.areaAddress" placeholder="自动生成，可手动修改" readonly />
         </el-form-item>
       </el-form>
 
@@ -96,11 +97,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import request from '@/utils/request'
 
 const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
+
+// 区域类型字典映射
+const areaTypeDict: Record<string, string> = {
+  '1': '小区',
+  '2': '分期',
+  '3': '楼栋',
+  '4': '单元',
+  '5': '楼层',
+  '6': '公共区域'
+}
+
+const formatAreaType = (type: string | number | null | undefined) => {
+  if (!type) return '-'
+  return areaTypeDict[String(type)] || String(type)
+}
 
 // tree
 const treeRef = ref()
@@ -167,6 +183,21 @@ const openAddDialog = (parent: any | null) => {
     areaType: '',
     areaAddress: ''
   })
+  // 新增时根据父节点生成地址
+  if (parent) {
+    form.areaAddress = parent.fullAddress || buildParentAddress(parent)
+  }
+}
+
+// 构建父级地址（兼容旧数据）
+const buildParentAddress = (node: any): string => {
+  const parts: string[] = []
+  let current = node
+  while (current) {
+    parts.unshift(current.areaName || current.name)
+    current = current.parent
+  }
+  return parts.join('-')
 }
 
 const openEditDialog = (node: any) => {
@@ -174,12 +205,14 @@ const openEditDialog = (node: any) => {
   isEdit.value = true
   parentNode.value = null
   dialogVisible.value = true
+  // 根据当前节点的 level 自动匹配类型值
+  const matchedType = node.level ? String(node.level) : ''
   Object.assign(form, {
     id: String(node.id),
     parentId: node.parentId ? String(node.parentId) : undefined,
     areaName: node.areaName || node.name,
-    areaType: node.areaType ?? '',
-    areaAddress: node.areaAddress ?? ''
+    areaType: matchedType, // 自动匹配类型
+    areaAddress: node.fullAddress ?? ''
   })
 }
 
@@ -230,15 +263,105 @@ const deleteArea = async (node: any) => {
   }
 }
 
+// 监听类型变化，动态更新地址
+watch(() => form.areaType, (newType) => {
+  if (!parentNode.value || !newType) return
+
+  const parentLevel = parentNode.value.level || 0
+  const currentLevel = parseInt(newType)
+
+  // 限制：类型的 level 值不能小于或等于父节点的 level 值
+  if (currentLevel <= parentLevel) {
+    ElMessage.warning('区域类型的层级必须大于父节点的层级')
+    form.areaType = ''
+    return
+  }
+
+  // 更新地址
+  const parentAddress = parentNode.value.fullAddress || buildParentAddress(parentNode.value)
+  form.areaAddress = parentAddress ? `${parentAddress}-${form.areaName}` : form.areaName
+})
+
+// 监听名称变化，动态更新地址
+watch(() => form.areaName, (newName) => {
+  if (!parentNode.value || !form.areaType) return
+
+  const parentAddress = parentNode.value.fullAddress || buildParentAddress(parentNode.value)
+  form.areaAddress = parentAddress ? `${parentAddress}-${newName}` : newName
+})
+
 onMounted(fetchTree)
 </script>
 
 <style scoped>
-.page { display:flex; flex-direction:column; gap:12px; }
-.toolbar-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.panel-header { display:flex; align-items:center; justify-content:space-between; }
-.tree-node { display:flex; align-items:center; justify-content:space-between; width:100%; gap:8px; }
-.label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.actions { display:flex; gap:4px; }
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* 修复 descriptions 组件样式 */
+:deep(.custom-descriptions) {
+  background-color: transparent !important;
+}
+
+:deep(.custom-descriptions .el-descriptions__header) {
+  margin-bottom: 12px;
+}
+
+:deep(.custom-descriptions .el-descriptions__body) {
+  background-color: transparent !important;
+}
+
+:deep(.custom-descriptions .el-descriptions__label) {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+:deep(.custom-descriptions .el-descriptions__content) {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
 </style>

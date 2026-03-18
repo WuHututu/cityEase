@@ -39,21 +39,16 @@
         <el-table-column prop="applyTime" label="申请时间" min-width="160" />
         <el-table-column label="操作" width="280">
           <template #default="{ row }">
-            <el-button v-if="row.status===0" size="small" type="success" plain @click="approve(row)">通过</el-button>
-            <el-button v-if="row.status===0" size="small" type="warning" plain @click="reject(row)">拒绝</el-button>
+            <el-button v-if="row.status === 0" size="small" type="success" plain @click="approve(row)">通过</el-button>
+            <el-button v-if="row.status === 0" size="small" type="warning" plain @click="reject(row)">拒绝</el-button>
             <el-button size="small" type="info" plain @click="viewDetail(row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pager">
-        <el-pagination
-          v-model:current-page="queryParams.pageNo"
-          :page-size="queryParams.pageSize"
-          layout="prev, pager, next, jumper, ->, total"
-          :total="total"
-          @current-change="fetchData"
-        />
+        <el-pagination v-model:current-page="queryParams.pageNo" :page-size="queryParams.pageSize"
+          layout="prev, pager, next, jumper, ->, total" :total="total" @current-change="fetchData" />
       </div>
     </el-card>
 
@@ -70,7 +65,7 @@
       </el-descriptions>
 
       <template #footer>
-        <el-button @click="detailVisible=false">关闭</el-button>
+        <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
@@ -79,73 +74,95 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/utils/request'
+import { pageBindAudit, getBindDetail, approveBind, rejectBind } from '@/api/bind'
 
-const unwrap = (res:any)=>res?.result ?? res?.data?.data ?? res?.data ?? res
+const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
 
 const loading = ref(false)
 const total = ref(0)
 const tableData = ref<any[]>([])
 
 const queryParams = reactive({
-  pageNo:1,
-  pageSize:10,
-  ownerName:'',
-  phone:'',
-  roomKeyword:'',
-  status:undefined as number|undefined
+  pageNo: 1,
+  pageSize: 10,
+  ownerName: '',
+  phone: '',
+  roomKeyword: '',
+  status: undefined as number | undefined
 })
 
 const fetchData = async () => {
   loading.value = true
-  try{
-    const res:any = await request.post('/admin/pms/bind/page', {...queryParams})
+  try {
+    const res: any = await pageBindAudit({ ...queryParams })
     const pageData = unwrap(res)
-    tableData.value = pageData?.records||[]
-    total.value = Number(pageData?.total||0)
-  }catch{
-    tableData.value=[]
-    total.value=0
-  }finally{
-    loading.value=false
+    tableData.value = pageData?.records || []
+    total.value = Number(pageData?.total || 0)
+  } catch {
+    tableData.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
   }
 }
 
-const handleSearch=()=>{ queryParams.pageNo=1; fetchData() }
-const handleReset=()=>{ queryParams.ownerName=''; queryParams.phone=''; queryParams.roomKeyword=''; queryParams.status=undefined; fetchData() }
+const handleSearch = () => { queryParams.pageNo = 1; fetchData() }
+const handleReset = () => { queryParams.ownerName = ''; queryParams.phone = ''; queryParams.roomKeyword = ''; queryParams.status = undefined; fetchData() }
 
-const statusText=(s:number)=>s===0?'待审核':s===1?'已通过':s===2?'已拒绝':'未知'
-const statusTag=(s:number)=>s===0?'warning':s===1?'success':'danger'
+const statusText = (s: number) => s === 0 ? '待审核' : s === 1 ? '已通过' : s === 2 ? '已拒绝' : '未知'
+const statusTag = (s: number) => s === 0 ? 'warning' : s === 1 ? 'success' : 'danger'
 
-const detailVisible=ref(false)
-const detailData=ref<any>(null)
-const viewDetail=(row:any)=>{ detailData.value=row; detailVisible.value=true }
+const detailVisible = ref(false)
+const detailData = ref<any>(null)
 
-const approve=async(row:any)=>{
-  try{
-    await ElMessageBox.confirm('确定通过该申请？','提示',{type:'warning'})
-    const res:any = await request.post('/admin/pms/bind/approve',{id:row.id})
-    ElMessage.success(unwrap(res)||'操作成功')
-    fetchData()
-  }catch{}
+// 查看详情时调用后端接口获取完整数据
+const viewDetail = async (row: any) => {
+  try {
+    const res: any = await getBindDetail(row.id)
+    detailData.value = unwrap(res)
+    detailVisible.value = true
+  } catch (e) {
+    ElMessage.error('获取详情失败')
+  }
 }
 
-const reject=async(row:any)=>{
-  try{
-    await ElMessageBox.prompt('请输入拒绝原因','提示',{inputType:'textarea', confirmButtonText:'提交', cancelButtonText:'取消'})
-      .then(async({value})=>{
-        const res:any = await request.post('/admin/pms/bind/reject',{id:row.id,remark:value})
-        ElMessage.success(unwrap(res)||'操作成功')
+const approve = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定通过该申请？', '提示', { type: 'warning' })
+    await approveBind({ id: row.id })
+    ElMessage.success('操作成功')
+    fetchData()
+  } catch { }
+}
+
+const reject = async (row: any) => {
+  try {
+    await ElMessageBox.prompt('请输入拒绝原因', '提示', { inputType: 'textarea', confirmButtonText: '提交', cancelButtonText: '取消' })
+      .then(async ({ value }) => {
+        await rejectBind({ id: row.id, remark: value })
+        ElMessage.success('操作成功')
         fetchData()
       })
-  }catch{}
+  } catch { }
 }
 
 fetchData()
 </script>
 
 <style scoped>
-.page{display:flex;flex-direction:column;gap:12px}
-.toolbar{margin-bottom:0}
-.pager{display:flex;justify-content:flex-end;padding-top:12px}
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px
+}
+
+.toolbar {
+  margin-bottom: 0
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px
+}
 </style>

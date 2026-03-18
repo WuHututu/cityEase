@@ -1,79 +1,159 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* 全局表格样式 - 统一所有 Element Plus 表格的暗黑主题样式 */
+.el-table {
+  background-color: transparent !important;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+.el-table th.el-table__cell {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #cbd5e1 !important;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+.el-table td.el-table__cell {
+  background-color: transparent !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.el-table__row {
+  background-color: transparent !important;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.el-table__row:hover>td {
+  background-color: rgba(24, 144, 255, 0.1) !important;
 }
 
-.card {
-  padding: 2em;
+/* 修复选中行样式 - 使用与背景相近但不同的颜色 */
+.el-table__row.current-row>td {
+  background-color: rgba(56, 68, 96, 0.6) !important;
+  color: #e2e8f0 !important;
 }
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* 固定列样式 */
+.el-table__fixed-right,
+.el-table__fixed {
+  background-color: #1e293b !important;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.el-table__fixed-right .el-table__cell,
+.el-table__fixed .el-table__cell {
+  background-color: #1e293b !important;
+}
+
+/* 表格边框 */
+.el-table--border {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.el-table--border td.el-table__cell,
+.el-table--border th.el-table__cell {
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 输入框样式 */
+.el-input__wrapper {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+}
+
+.el-input__inner {
+  color: #e2e8f0 !important;
+}
+
+.el-input__inner::placeholder {
+  color: #64748b !important;
+}
+
+/* 文本域样式 */
+.el-textarea__inner {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.el-textarea__inner::placeholder {
+  color: #64748b !important;
+}
+
+/* 按钮样式 */
+.el-button {
+  font-size: 13px;
+}
+
+/* 卡片样式 */
+.el-card {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.el-card__header {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 对话框样式 */
+.el-dialog {
+  background-color: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.el-dialog__title {
+  color: #e2e8f0 !important;
+}
+
+.el-dialog__body {
+  color: #94a3b8 !important;
+}
+
+/* 分页样式 */
+.el-pagination.is-background .el-pager li {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: #94a3b8 !important;
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: #1890ff !important;
+  color: #fff !important;
+}
+
+.el-pagination.is-background .btn-next,
+.el-pagination.is-background .btn-prev {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: #94a3b8 !important;
+}
+
+/* Descriptions 描述列表样式 */
+.el-descriptions--bordered {
+  background-color: transparent !important;
+}
+
+.el-descriptions--bordered .el-descriptions__label {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.el-descriptions--bordered .el-descriptions__content {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Tree 树形控件样式 */
+.el-tree {
+  background-color: transparent !important;
+}
+
+.el-tree-node__content {
+  color: #94a3b8 !important;
+}
+
+.el-tree-node__content:hover {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+.el-tree-node.is-current>.el-tree-node__content {
+  background-color: rgba(56, 68, 96, 0.6) !important;
+  color: #e2e8f0 !important;
 }

@@ -36,7 +36,7 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : 'info'">{{ row.status === 0 ? '启用' : '禁用' }}</el-tag>
+            <el-tag :type="row.isDisabled === 0 ? 'success' : 'danger'">{{ row.isDisabled === 0 ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="170" />
@@ -44,28 +44,17 @@
           <template #default="{ row }">
             <el-button size="small" type="primary" plain @click="openEditDialog(row)">编辑</el-button>
             <el-button size="small" type="warning" plain @click="resetPwd(row)">重置密码</el-button>
-            <el-button
-              size="small"
-              :type="row.status === 0 ? 'danger' : 'success'"
-              plain
-              @click="toggleStatus(row)"
-            >
-              {{ row.status === 0 ? '禁用' : '启用' }}
+            <el-button size="small" :type="row.isDisabled === 0 ? 'danger' : 'success'" plain @click="toggleStatus(row)">
+              {{ row.isDisabled === 0 ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pager">
-        <el-pagination
-          v-model:current-page="queryParams.pageNo"
-          v-model:page-size="queryParams.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="sizes, prev, pager, next, jumper, ->, total"
-          :total="total"
-          @size-change="handleSearch"
-          @current-change="fetchData"
-        />
+        <el-pagination v-model:current-page="queryParams.pageNo" v-model:page-size="queryParams.pageSize"
+          :page-sizes="[10, 20, 50, 100]" layout="sizes, prev, pager, next, jumper, ->, total" :total="total"
+          @size-change="handleSearch" @current-change="fetchData" />
       </div>
     </el-card>
 
@@ -79,6 +68,9 @@
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="form.phone" placeholder="可选" />
+        </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <ImageUploader v-model="form.avatar" />
         </el-form-item>
         <el-form-item label="角色" prop="userRole">
           <el-select v-model="form.userRole" placeholder="请选择" style="width: 100%">
@@ -106,6 +98,7 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import request from '@/utils/request'
+import ImageUploader from '@/components/ImageUploader.vue'
 
 const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
 
@@ -176,6 +169,7 @@ const form = reactive({
   username: '',
   realName: '',
   phone: '',
+  avatar: '',
   userRole: undefined as number | undefined,
   password: ''
 })
@@ -190,7 +184,7 @@ const openAddDialog = () => {
   dialogTitle.value = '新增用户'
   isEdit.value = false
   dialogVisible.value = true
-  Object.assign(form, { userId: undefined, username: '', realName: '', phone: '', userRole: undefined, password: '' })
+  Object.assign(form, { userId: undefined, username: '', realName: '', phone: '', avatar: '', userRole: undefined, password: '' })
 }
 const openEditDialog = (row: any) => {
   dialogTitle.value = '编辑用户'
@@ -201,6 +195,7 @@ const openEditDialog = (row: any) => {
     username: row.username,
     realName: row.realName,
     phone: row.phone,
+    avatar: row.avatar || '',
     userRole: row.userRole,
     password: ''
   })
@@ -217,10 +212,12 @@ const submitForm = async () => {
   submitting.value = true
   try {
     if (isEdit.value) {
-      await request.post('/admin/system/user/update', {
+      await request.post('/admin/system/user/save', {
         userId: form.userId,
+        username: form.username,
         realName: form.realName,
         phone: form.phone,
+        avatar: form.avatar,
         userRole: form.userRole
       })
     } else {
@@ -228,6 +225,7 @@ const submitForm = async () => {
         username: form.username,
         realName: form.realName,
         phone: form.phone,
+        avatar: form.avatar,
         userRole: form.userRole,
         password: form.password
       })
@@ -243,14 +241,14 @@ const submitForm = async () => {
 }
 
 const toggleStatus = async (row: any) => {
-  const enable = row.status !== 0
+  const enable = row.isDisabled !== 0  // 如果当前是禁用状态（1），则启用
   try {
     await ElMessageBox.confirm(
       enable ? '确定启用该用户？' : '确定禁用该用户？',
       '提示',
       { type: 'warning' }
     )
-    await request.post('/admin/system/user/disable', { userId: row.userId ?? row.id, disable: !enable })
+    await request.post('/admin/system/user/disable', { userId: row.userId ?? row.id, disable: enable ? 0 : 1 })
     ElMessage.success('操作成功')
     fetchData()
   } catch {
@@ -272,7 +270,19 @@ fetchData()
 </script>
 
 <style scoped>
-.page { display: flex; flex-direction: column; gap: 12px; }
-.toolbar { margin-bottom: 0; }
-.pager { display: flex; justify-content: flex-end; padding-top: 12px; }
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar {
+  margin-bottom: 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
 </style>

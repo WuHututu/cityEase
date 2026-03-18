@@ -14,6 +14,8 @@ import nynu.cityEase.service.pms.service.mapper.BindAuditMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,10 @@ public class BindAuditServiceImpl extends ServiceImpl<BindAuditMapper, BindAudit
         BindAuditDO doObj = this.getById(id);
         if(doObj==null) throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED,"绑定申请不存在");
         doObj.setStatus(1);
+        // 设置审核人和审核时间
+        doObj.setAuditorId(1900000000000000007L); // TODO: 从登录用户获取
+        doObj.setAuditorName("管理员"); // TODO: 从登录用户获取
+        doObj.setAuditTime(LocalDateTime.now());
         this.updateById(doObj);
     }
 
@@ -65,6 +71,10 @@ public class BindAuditServiceImpl extends ServiceImpl<BindAuditMapper, BindAudit
         if(doObj==null) throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED,"绑定申请不存在");
         doObj.setStatus(2);
         doObj.setRemark(remark);
+        // 设置审核人和审核时间
+        doObj.setAuditorId(1900000000000000007L); // TODO: 从登录用户获取
+        doObj.setAuditorName("管理员"); // TODO: 从登录用户获取
+        doObj.setAuditTime(LocalDateTime.now());
         this.updateById(doObj);
     }
 

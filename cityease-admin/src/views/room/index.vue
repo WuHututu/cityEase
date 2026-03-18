@@ -3,19 +3,11 @@
     <el-card shadow="never" class="toolbar">
       <el-form :inline="true" :model="queryParams" @submit.prevent>
         <el-form-item label="所属区域">
-          <el-tree-select
-            v-model="queryParams.areaId"
-            :data="areaTree"
-            node-key="id"
-            :props="treeSelectProps"
-            clearable
-            check-strictly
-            placeholder="选择区域（可选）"
-            style="width: 280px"
-          />
+          <el-tree-select v-model="queryParams.areaId" :data="areaTree" node-key="id" :props="treeSelectProps" clearable
+            check-strictly placeholder="选择区域（可选）" style="width: 280px" />
         </el-form-item>
         <el-form-item label="关键字">
-          <el-input v-model="queryParams.keyword" placeholder="房号/地址/业主" clearable style="width: 220px" />
+          <el-input v-model="queryParams.keyword" placeholder="请输入房号" clearable style="width: 220px" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
@@ -44,28 +36,16 @@
       </el-table>
 
       <div class="pager">
-        <el-pagination
-          v-model:current-page="queryParams.pageNo"
-          :page-size="queryParams.pageSize"
-          layout="prev, pager, next, jumper, ->, total"
-          :total="total"
-          @current-change="fetchData"
-        />
+        <el-pagination v-model:current-page="queryParams.pageNo" :page-size="queryParams.pageSize"
+          layout="prev, pager, next, jumper, ->, total" :total="total" @current-change="fetchData" />
       </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="560px" @close="closeDialog">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="所属区域" prop="areaId">
-          <el-tree-select
-            v-model="form.areaId"
-            :data="areaTree"
-            node-key="id"
-            :props="treeSelectProps"
-            check-strictly
-            placeholder="请选择区域（必填）"
-            style="width: 100%"
-          />
+          <el-tree-select v-model="form.areaId" :data="areaTree" node-key="id" :props="treeSelectProps" check-strictly
+            placeholder="请选择区域（必填）" style="width: 100%" />
         </el-form-item>
         <el-form-item label="房号" prop="roomNum">
           <el-input v-model="form.roomNum" placeholder="如：1101" />
@@ -229,6 +209,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page { display:flex; flex-direction:column; gap:12px; }
-.pager { display:flex; justify-content:flex-end; padding-top:12px; }
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
 </style>

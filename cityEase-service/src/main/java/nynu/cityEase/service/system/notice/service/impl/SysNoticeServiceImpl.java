@@ -4,11 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.RedisKeyConstants;
 import nynu.cityEase.api.vo.constants.StatusEnum;
+import nynu.cityEase.api.vo.system.AdminNoticeQueryReq;
 import nynu.cityEase.api.vo.system.AppNoticeQueryReq;
 import nynu.cityEase.api.vo.system.NoticeDetailVO;
 import nynu.cityEase.api.vo.system.NoticeListVO;
@@ -39,14 +42,14 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateNotice(NoticeSaveReq req) {
         long adminId = StpUtil.getLoginIdAsLong();
-
+    
         SysNoticeDO noticeDO = new SysNoticeDO();
         BeanUtils.copyProperties(req, noticeDO);
-
-        // 提取前端的发布意图：1代表已发布，0代表草稿
+    
+        // 提取前端的发布意图：1 代表已发布，0 代表草稿
         int targetStatus = Boolean.TRUE.equals(req.getIsPublish()) ? 1 : 0;
         noticeDO.setStatus(targetStatus);
-
+    
         if (req.getId() == null) {
             // 新增
             noticeDO.setCreatorId(adminId);
@@ -60,12 +63,10 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
             // 保留原创建人
             noticeDO.setCreatorId(existNotice.getCreatorId());
             this.updateById(noticeDO);
+                
+            // 修改后清理缓存，防止缓存导致的状态不一致
+            stringRedisTemplate.delete(RedisKeyConstants.NOTICE_DETAIL_KEY + req.getId());
         }
-
-        // 如果你在后台还做了“发布/撤回”切换，建议这里清理详情缓存（可选）
-        // if (req.getId() != null) {
-        //     stringRedisTemplate.delete(RedisKeyConstants.NOTICE_DETAIL_KEY + req.getId());
-        // }
     }
 
     @Override
@@ -109,30 +110,103 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     public NoticeDetailVO getNoticeDetail(Long id) {
         // 定义 Redis Key
         String redisKey = RedisKeyConstants.NOTICE_DETAIL_KEY + id;
-
+    
         // 1) 优先查询 Redis 缓存
         String cacheJson = stringRedisTemplate.opsForValue().get(redisKey);
         if (StrUtil.isNotBlank(cacheJson)) {
             return JSONUtil.toBean(cacheJson, NoticeDetailVO.class);
         }
-
+    
         // 2) 缓存未命中，穿透到数据库查询
         SysNoticeDO noticeDO = this.getById(id);
         if (noticeDO == null) {
             throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "公告不存在");
         }
-
-        // 防抓包：App端只能看已发布
-        if (noticeDO.getStatus() == null || noticeDO.getStatus() != 1) {
-            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "该公告尚未发布或已撤回");
-        }
-
+            
+        // 注意：管理端后台可以查看任何状态的公告（包括草稿），所以这里不做状态限制
+        // App 端的访问限制应该在 App 端接口中做，而不是在管理端
+            
         NoticeDetailVO vo = new NoticeDetailVO();
         BeanUtils.copyProperties(noticeDO, vo);
-
+    
         // 3) 将查询结果写入 Redis，并设置 24 小时过期时间
         stringRedisTemplate.opsForValue().set(redisKey, JSONUtil.toJsonStr(vo), 24, TimeUnit.HOURS);
-
+    
         return vo;
+    }
+
+    @Override
+    public Page<NoticeListVO> page(AdminNoticeQueryReq req) {
+        LambdaQueryWrapper<SysNoticeDO> wrapper = new LambdaQueryWrapper<>();
+
+        // 按类型筛选
+        if (req.getNoticeType() != null) {
+            wrapper.eq(SysNoticeDO::getNoticeType, req.getNoticeType());
+        }
+
+        // 按状态筛选
+        if (req.getStatus() != null) {
+            wrapper.eq(SysNoticeDO::getStatus, req.getStatus());
+        }
+
+        // 标题关键字模糊搜索
+        if (StrUtil.isNotBlank(req.getKeyword())) {
+            wrapper.like(SysNoticeDO::getNoticeTitle, req.getKeyword().trim());
+        }
+
+        // 排序：先按置顶降序，再按创建时间倒序
+        wrapper.orderByDesc(SysNoticeDO::getIsTop)
+                .orderByDesc(SysNoticeDO::getCreateTime);
+
+        Page<SysNoticeDO> doPage = this.page(new Page<>(req.getPageNo(), req.getPageSize()), wrapper);
+
+        Page<NoticeListVO> voPage = new Page<>(doPage.getCurrent(), doPage.getSize(), doPage.getTotal());
+        List<NoticeListVO> voList = new ArrayList<>(doPage.getRecords().size());
+
+        for (SysNoticeDO noticeDO : doPage.getRecords()) {
+            NoticeListVO vo = new NoticeListVO();
+            BeanUtils.copyProperties(noticeDO, vo);
+            voList.add(vo);
+        }
+
+        voPage.setRecords(voList);
+        return voPage;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteNotice(Long id) {
+        SysNoticeDO existNotice = this.getById(id);
+        if (existNotice == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "该公告不存在或已被删除");
+        }
+        
+        // 使用 UpdateWrapper 直接更新 is_deleted 字段
+        UpdateWrapper<SysNoticeDO> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", id)
+                    .set("is_deleted", 1);
+        boolean updated = this.update(updateWrapper);
+        
+        if (!updated) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "删除失败");
+        }
+        
+        // 清理缓存
+        String redisKey = RedisKeyConstants.NOTICE_DETAIL_KEY + id;
+        stringRedisTemplate.delete(redisKey);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void toggleTop(Long id) {
+        SysNoticeDO existNotice = this.getById(id);
+        if (existNotice == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "该公告不存在或已被删除");
+        }
+
+        // 切换置顶状态：0->1, 1->0
+        Integer currentTop = existNotice.getIsTop() == null ? 0 : existNotice.getIsTop();
+        existNotice.setIsTop(currentTop == 0 ? 1 : 0);
+        this.updateById(existNotice);
     }
 }

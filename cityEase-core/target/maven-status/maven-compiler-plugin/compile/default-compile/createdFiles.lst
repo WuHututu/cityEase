@@ -1,0 +1,10 @@
+nynu\cityEase\core\mdc\SelfTraceIdGenerator.class
+nynu\cityEase\core\config\JacksonConfig.class
+nynu\cityEase\core\region\IpRegionInfo.class
+nynu\cityEase\core\util\CrossUtil.class
+nynu\cityEase\core\mdc\MdcUtil.class
+nynu\cityEase\core\util\IpUtil.class
+nynu\cityEase\core\config\SaTokenConfig.class
+nynu\cityEase\core\mdc\MdcDot.class
+nynu\cityEase\core\mdc\MdcAspect.class
+nynu\cityEase\core\config\XxlJobConfig.class

@@ -20,12 +20,12 @@ public class PointGoodsVO {
     @ApiModelProperty("商品简介/描述")
     private String description;
 
-    @ApiModelProperty("商品主图URL")
+    @ApiModelProperty("商品主图 URL")
     private String imageUrl;
-
+    
     @ApiModelProperty("兑换所需积分")
-    private BigDecimal points;
-
+    private Integer pointsPrice;
+    
     @ApiModelProperty("库存")
     private Integer stock;
 
