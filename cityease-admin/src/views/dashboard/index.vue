@@ -1,8 +1,13 @@
 <template>
   <div class="dashboard-container">
+    <div v-if="refreshing" class="refresh-mask">城易治正在同步最新数据...</div>
     <div class="welcome-box">
-      <h2>数据指挥舱 <span class="subtitle">Data Command Center</span></h2>
+      <h2>城易治数据指挥舱 <span class="subtitle">Data Command Center</span></h2>
       <p>实时监控 CityEase 智慧社区的运行状态</p>
+      <div class="ops">
+        <el-button size="small" :loading="refreshing" @click="refreshAll">刷新数据</el-button>
+        <span class="update-time">最近更新：{{ updatedAt || '--' }}</span>
+      </div>
     </div>
 
     <el-row :gutter="20" class="kpi-row">
@@ -122,12 +127,6 @@ interface DashboardMetrics {
 }
 
 // 定义图表数据类型
-interface ChartDataVO {
-  xAxisData: string[]
-  series: Array<{ name: string; data: number[] }>
-}
-
-
 const router = useRouter()
 
 const metrics = ref<DashboardMetrics>({
@@ -140,6 +139,8 @@ const metrics = ref<DashboardMetrics>({
   weekNotices: 0,
   topNotices: 0
 })
+const refreshing = ref(false)
+const updatedAt = ref('')
 
 // 图表相关引用
 const chartRef = ref<HTMLElement | null>(null)
@@ -150,7 +151,6 @@ const initChart = (chartData: any = null) => {
   // 确保DOM元素已经渲染
   nextTick(() => {
     if (!chartRef.value) {
-      console.log('Chart container not ready, delaying initialization');
       // 如果DOM元素还没准备好，延迟一下再尝试
       setTimeout(() => {
         if (!chartRef.value) return;
@@ -177,7 +177,7 @@ const initChart = (chartData: any = null) => {
       // 兼容大小写不同的字段名
       xAxisData = chartData.xAxisData || chartData.xaxisData;
 
-      seriesData = chartData.series.map((s: any, idx: number) => ({
+      seriesData = chartData.series.map((s: any) => ({
         name: s.name,
         type: 'line',
         smooth: true,
@@ -304,23 +304,27 @@ const fetchChartData = async () => {
   }
 }
 
+const refreshAll = async () => {
+  refreshing.value = true
+  await Promise.all([fetchMetrics(), fetchChartData()])
+  updatedAt.value = new Date().toLocaleString('zh-CN', { hour12: false })
+  refreshing.value = false
+}
 
 onMounted(() => {
   fetchMetrics();
-  // 延迟一点获取图表数据，确保DOM完全渲染
   setTimeout(() => {
-    fetchChartData(); // 获取图表数据
+    fetchChartData();
   }, 100);
-  // 必须等 DOM 渲染完后初始化图表
   nextTick(() => {
     window.addEventListener('resize', handleResize);
-    // 在DOM准备完成后再次尝试初始化图表（如果需要的话）
     setTimeout(() => {
       if (chartRef.value && chartInstance) {
         chartInstance.resize();
       }
     }, 300);
   });
+  updatedAt.value = new Date().toLocaleString('zh-CN', { hour12: false })
 })
 
 onBeforeUnmount(() => {
@@ -330,9 +334,23 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-/* 此处保留你原有的 CSS 样式，无需改动 */
 .dashboard-container {
   color: #e2e8f0;
+  position: relative;
+}
+
+.refresh-mask {
+  position: absolute;
+  z-index: 8;
+  right: 16px;
+  top: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(24, 144, 255, 0.4);
+  color: #93c5fd;
+  font-size: 12px;
+  backdrop-filter: blur(6px);
 }
 
 .welcome-box {
@@ -357,6 +375,18 @@ onBeforeUnmount(() => {
     margin: 0;
     color: #94a3b8;
     font-size: 14px;
+  }
+
+  .ops {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .update-time {
+    font-size: 12px;
+    color: #64748b;
   }
 }
 
