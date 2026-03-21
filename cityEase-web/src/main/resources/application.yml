@@ -71,8 +71,6 @@ xxl:
 
 aliyun:
   oss:
-    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:test-access-key-id}
-    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:test-access-key-secret}
     bucket-name: wuhututu          # 存储桶名称
     endpoint: oss-cn-hangzhou.aliyuncs.com  # 地域Endpoint
     access-key-id: LTAI5tJ5Nkz6MfHZ1PBpGoer      # 你的AccessKey ID
