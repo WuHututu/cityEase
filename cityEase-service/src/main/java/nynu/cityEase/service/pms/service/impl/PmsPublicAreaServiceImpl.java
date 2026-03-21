@@ -13,6 +13,8 @@ import nynu.cityEase.api.vo.pms.PublicAreaReq;
 import nynu.cityEase.api.vo.pms.PublicAreaTreeVO;
 import nynu.cityEase.service.pms.repository.dao.PmsDao;
 import nynu.cityEase.service.pms.repository.entity.PublicAreaDO;
+import nynu.cityEase.service.pms.repository.entity.RoomDO;
+import nynu.cityEase.service.pms.repository.mapper.RoomMapper;
 import nynu.cityEase.service.pms.service.IPmsPublicAreaService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private RoomMapper roomMapper;
 
     @Override
     public List<PublicAreaTreeVO> getAreaTree() {
@@ -260,5 +265,22 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
             currentId = area.getParentId();
         }
         return fullName.toString();
+    }
+
+    @Override
+    public List<RoomDO> getRoomsByArea(Long areaId) {
+        if (areaId == null) {
+            return new ArrayList<>();
+        }
+        LambdaQueryWrapper<RoomDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(RoomDO::getAreaId, areaId).orderByAsc(RoomDO::getRoomNum);
+        return roomMapper.selectList(wrapper);
+    }
+
+    @Override
+    public List<RoomDO> searchRooms(String keyword) {
+        LambdaQueryWrapper<RoomDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StrUtil.isNotBlank(keyword), RoomDO::getRoomNum, keyword).orderByAsc(RoomDO::getRoomNum);
+        return roomMapper.selectList(wrapper);
     }
 }
