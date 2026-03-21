@@ -4,10 +4,11 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.RedisKeyConstants;
 import nynu.cityEase.api.vo.constants.StatusEnum;
+import nynu.cityEase.api.vo.pms.AdminAreaTreeVO;
+import nynu.cityEase.api.vo.pms.AdminAreaUpsertReq;
 import nynu.cityEase.api.vo.pms.PublicAreaReq;
 import nynu.cityEase.api.vo.pms.PublicAreaTreeVO;
 import nynu.cityEase.service.pms.repository.dao.PmsDao;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -103,6 +105,102 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
         redisTemplate.delete(RedisKeyConstants.PUBLIC_AREA_TREE_KEY);
     }
 
+    @Override
+    public List<AdminAreaTreeVO> getAdminAreaTree() {
+        List<PublicAreaDO> list = pmsDao.list(new LambdaQueryWrapper<PublicAreaDO>().orderByAsc(PublicAreaDO::getSort));
+        Map<Long, AdminAreaTreeVO> idMap = list.stream().map(area -> {
+            AdminAreaTreeVO vo = new AdminAreaTreeVO();
+            vo.setId(area.getId());
+            vo.setParentId(area.getParentId());
+            vo.setAreaName(area.getName());
+            vo.setLevel(area.getLevel());
+            vo.setSort(area.getSort());
+            vo.setChildren(new ArrayList<>());
+            vo.setAreaType(null);
+            vo.setFullAddress(buildFullAddressByMap(area.getId(), list));
+            return vo;
+        }).collect(Collectors.toMap(AdminAreaTreeVO::getId, vo -> vo, (a, b) -> a));
+
+        List<AdminAreaTreeVO> roots = new ArrayList<>();
+        for (AdminAreaTreeVO node : idMap.values()) {
+            Long parentId = node.getParentId();
+            if (parentId != null && parentId != 0L && idMap.containsKey(parentId)) {
+                idMap.get(parentId).getChildren().add(node);
+            } else {
+                roots.add(node);
+            }
+        }
+
+        sortAdminTree(roots);
+        return roots;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveAdminArea(AdminAreaUpsertReq req) {
+        req.setId(null);
+        upsertAdminArea(req);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAdminArea(AdminAreaUpsertReq req) {
+        if (req.getId() == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "缺少id");
+        }
+        upsertAdminArea(req);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAdminArea(Long id) {
+        if (id == null) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "缺少 id 参数");
+        }
+        if (pmsDao.hasChildren(id)) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "该区域下存在子区域，请先删除子区域");
+        }
+
+        boolean removed = pmsDao.removeById(id);
+        if (!removed) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "区域不存在或已删除");
+        }
+
+        redisTemplate.delete(RedisKeyConstants.PUBLIC_AREA_TREE_KEY);
+    }
+
+    private void upsertAdminArea(AdminAreaUpsertReq req) {
+        if (req.getAreaName() == null || req.getAreaName().trim().isEmpty()) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "区域名称不能为空");
+        }
+
+        Long parentId = req.getParentId() == null ? 0L : req.getParentId();
+        int level;
+        if (parentId == 0L) {
+            level = 1;
+        } else {
+            PublicAreaDO parent = pmsDao.getById(parentId);
+            if (parent == null) {
+                throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "父级区域不存在");
+            }
+            level = (parent.getLevel() == null ? 1 : parent.getLevel()) + 1;
+        }
+
+        PublicAreaDO area = new PublicAreaDO();
+        area.setId(req.getId());
+        area.setParentId(parentId);
+        area.setName(req.getAreaName().trim());
+        area.setLevel(level);
+        area.setSort(req.getSort() == null ? 0 : req.getSort());
+
+        boolean result = pmsDao.saveOrUpdate(area);
+        if (!result) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "区域保存失败");
+        }
+
+        redisTemplate.delete(RedisKeyConstants.PUBLIC_AREA_TREE_KEY);
+    }
+
     /**
      * 1. 把所有节点放进 Map<ID, Node>，方便快速查找。
      * 2. 遍历列表，尝试去找每个节点的“父亲”。
@@ -167,5 +265,39 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
         return fullName.toString();
     }
 
+    private void sortAdminTree(List<AdminAreaTreeVO> nodes) {
+        if (CollUtil.isEmpty(nodes)) {
+            return;
+        }
+        nodes.sort(Comparator.comparingInt(node -> node.getSort() == null ? 0 : node.getSort()));
+        for (AdminAreaTreeVO node : nodes) {
+            sortAdminTree(node.getChildren());
+        }
+    }
 
+    private String buildFullAddressByMap(Long areaId, List<PublicAreaDO> allAreas) {
+        if (areaId == null) {
+            return "";
+        }
+
+        Map<Long, PublicAreaDO> areaMap = allAreas.stream().collect(Collectors.toMap(PublicAreaDO::getId, a -> a));
+        StringBuilder fullName = new StringBuilder();
+        Long currentId = areaId;
+
+        int maxDepth = 10;
+        while (currentId != null && currentId != 0L && maxDepth-- > 0) {
+            PublicAreaDO area = areaMap.get(currentId);
+            if (area == null) {
+                break;
+            }
+
+            if (!fullName.isEmpty()) {
+                fullName.insert(0, "-");
+            }
+            fullName.insert(0, area.getName());
+            currentId = area.getParentId();
+        }
+
+        return fullName.toString();
+    }
 }
