@@ -250,9 +250,16 @@ public class GovPointRankingServiceImpl implements IGovPointRankingService {
      */
     private String getAreaName(Long areaId) {
         if (areaId == null) {
-            return null;
+            return "";
         }
+        
         PublicAreaDO area = publicAreaMapper.selectById(areaId);
-        return area != null ? area.getName() : null;
+        return area != null ? area.getName() : "";
+    }
+
+    @Override
+    public Long getRoomPointBalance(Long roomId) {
+        RoomDO room = roomMapper.selectById(roomId);
+        return room != null ? room.getPointsBalance() : 0L;
     }
 }

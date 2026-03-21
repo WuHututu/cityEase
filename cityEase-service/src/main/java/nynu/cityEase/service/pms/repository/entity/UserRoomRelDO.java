@@ -46,4 +46,9 @@ public class UserRoomRelDO extends BaseDO {
      */
     @TableField("remark")
     private String remark;
+    /**
+     * 是否为当前房屋: 0-否, 1-是
+     */
+    @TableField("is_current")
+    private Integer isCurrent;
 }
