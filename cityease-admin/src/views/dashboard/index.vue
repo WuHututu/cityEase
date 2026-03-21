@@ -334,7 +334,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-/* 此处保留你原有的 CSS 样式，无需改动 */
 .dashboard-container {
   color: #e2e8f0;
 }
