@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/CityEase.iml" filepath="$PROJECT_DIR$/.idea/CityEase.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-api.iml" filepath="$PROJECT_DIR$/cityEase-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-core.iml" filepath="$PROJECT_DIR$/cityEase-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-service.iml" filepath="$PROJECT_DIR$/cityEase-service.iml" />

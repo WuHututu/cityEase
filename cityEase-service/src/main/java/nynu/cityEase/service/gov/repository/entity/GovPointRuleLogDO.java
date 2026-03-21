@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import nynu.cityEase.api.entity.BaseDO;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
  * 积分规则执行记录实体类
  * Created: 2026/3/18
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @TableName("gov_point_rule_log")
 public class GovPointRuleLogDO extends BaseDO {

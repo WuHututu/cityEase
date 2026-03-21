@@ -10,7 +10,6 @@ database:
   password: 123456
 
 
-
 # mybatis 相关统一配置
 mybatis-plus:
   configuration:
@@ -76,7 +75,8 @@ aliyun:
     access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:test-access-key-secret}
     bucket-name: wuhututu          # 存储桶名称
     endpoint: oss-cn-hangzhou.aliyuncs.com  # 地域Endpoint
-
+    access-key-id: LTAI5tJ5Nkz6MfHZ1PBpGoer      # 你的AccessKey ID
+    access-key-secret: zDDedh2iX6xXG8Ec1y82cPmLwWJHNn  # 你的AccessKey Secret
     file-host: wuhututu/       # 上传文件的基础路径
 
 # 文件上传配置
