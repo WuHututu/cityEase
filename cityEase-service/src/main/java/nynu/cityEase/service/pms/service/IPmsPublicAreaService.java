@@ -1,5 +1,7 @@
 package nynu.cityEase.service.pms.service;
 
+import nynu.cityEase.api.vo.pms.AdminAreaTreeVO;
+import nynu.cityEase.api.vo.pms.AdminAreaUpsertReq;
 import nynu.cityEase.api.vo.pms.PublicAreaReq;
 import nynu.cityEase.api.vo.pms.PublicAreaTreeVO;
 
@@ -23,6 +25,26 @@ public interface IPmsPublicAreaService {
     void addArea(PublicAreaReq req);
 
     void removeArea(Long areaId);
+
+    /**
+     * 后台管理端：获取公共区域树
+     */
+    List<AdminAreaTreeVO> getAdminAreaTree();
+
+    /**
+     * 后台管理端：新增公共区域
+     */
+    void saveAdminArea(AdminAreaUpsertReq req);
+
+    /**
+     * 后台管理端：编辑公共区域
+     */
+    void updateAdminArea(AdminAreaUpsertReq req);
+
+    /**
+     * 后台管理端：删除公共区域
+     */
+    void deleteAdminArea(Long id);
 
     /**
      * 根据底层节点ID，向上溯源获取完整的区域名称
