@@ -5,7 +5,10 @@
         <el-icon>
           <Platform />
         </el-icon>
-        <span v-if="!isCollapse">CityEase</span>
+        <div v-if="!isCollapse" class="brand-text">
+          <span class="cn">城易治</span>
+          <span class="en">CityEase</span>
+        </div>
       </div>
 
       <el-menu active-text-color="#00f0ff" background-color="#0f172a" class="el-menu-vertical"
@@ -97,6 +100,10 @@
               <Expand v-else />
             </el-icon>
           </el-button>
+          <div class="header-meta">
+            <span class="title">城易治 · 智慧物业管理台</span>
+            <span class="time">{{ nowText }}</span>
+          </div>
         </div>
 
         <div class="right">
@@ -125,11 +132,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, Bell, ShoppingCart, Connection, Setting, Trophy } from '@element-plus/icons-vue'
+import { Platform, DataLine, Tools, Money, House, Fold, Expand, ArrowDown, User, ShoppingCart, Connection, Setting, Trophy } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -139,6 +146,13 @@ const toggle = () => (isCollapse.value = !isCollapse.value)
 
 const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
 const userInfo = ref<any>(null)
+const nowText = ref('')
+let timer: number | undefined
+
+const updateTime = () => {
+  const now = new Date()
+  nowText.value = now.toLocaleString('zh-CN', { hour12: false })
+}
 
 const fetchUser = async () => {
   try {
@@ -160,7 +174,17 @@ const logout = async () => {
   router.push('/login')
 }
 
-onMounted(fetchUser)
+onMounted(() => {
+  fetchUser()
+  updateTime()
+  timer = window.setInterval(updateTime, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
+})
 </script>
 
 <style scoped>
@@ -176,6 +200,7 @@ onMounted(fetchUser)
   color: #fff;
   display: flex;
   flex-direction: column;
+  transition: width .2s ease;
 }
 
 .sidebar.collapse {
@@ -189,6 +214,23 @@ onMounted(fetchUser)
   gap: 10px;
   padding: 0 16px;
   font-weight: 700;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.cn {
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.en {
+  font-size: 12px;
+  color: #64748b;
 }
 
 .main {
@@ -207,9 +249,29 @@ onMounted(fetchUser)
   border-bottom: 1px solid rgba(148, 163, 184, .12);
 }
 
+.header-meta {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+}
+
+.title {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.time {
+  color: #64748b;
+  font-size: 12px;
+}
+
 .content {
   padding: 12px;
   overflow: auto;
+  background: radial-gradient(circle at 20% 20%, rgba(24, 144, 255, 0.05), transparent 40%),
+  radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.04), transparent 35%),
+  #0b1220;
 }
 
 .user {
@@ -225,5 +287,11 @@ onMounted(fetchUser)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background-color: rgba(24, 144, 255, 0.15) !important;
+  color: #e2e8f0 !important;
 }
 </style>

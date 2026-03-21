@@ -17,6 +17,11 @@ public interface IGovPointRankingCacheService {
     void refreshAllRankings();
 
     /**
+     * 清除所有排行榜缓存
+     */
+    void clearAllRankings();
+
+    /**
      * 刷新房屋积分排行榜缓存
      */
     void refreshRoomRanking();

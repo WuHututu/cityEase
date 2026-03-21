@@ -8,8 +8,13 @@
         <div class="logo-box">
           <el-icon class="logo-icon"><Platform /></el-icon>
         </div>
-        <h2 class="title">CityEase</h2>
+        <h2 class="title">城易治 CityEase</h2>
         <p class="subtitle">智慧物业数据指挥舱</p>
+        <div class="feature-tags">
+          <span>房屋管理</span>
+          <span>报修协同</span>
+          <span>费用追踪</span>
+        </div>
       </div>
 
       <el-form
@@ -36,8 +41,14 @@
               :prefix-icon="Lock"
               size="large"
               show-password
+              @keyup="onPasswordKeyup"
               @keyup.enter="handleLogin(loginFormRef)"
           />
+        </el-form-item>
+
+        <el-form-item class="extra">
+          <el-checkbox v-model="rememberPhone">记住账号</el-checkbox>
+          <span v-if="capsLockOn" class="caps-lock-tip">大写锁定已开启</span>
         </el-form-item>
 
         <el-form-item>
@@ -48,7 +59,7 @@
               size="large"
               @click="handleLogin(loginFormRef)"
           >
-            进入系统
+            {{ loading ? '登录中...' : '进入系统' }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -57,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -67,16 +78,22 @@ import request from '@/utils/request'
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
+const rememberPhone = ref(true)
+const capsLockOn = ref(false)
 
 const loginForm = reactive({
   phone: '',
   password: ''
 })
 
+const onPasswordKeyup = (event: KeyboardEvent) => {
+  capsLockOn.value = event.getModifierState('CapsLock')
+}
+
 const rules = reactive<FormRules>({
   phone: [
     { required: true, message: '请输入管理员账号', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+    { pattern: /^1\d{10}$/, message: '请输入11位手机号', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入管理员密码', trigger: 'blur' },
@@ -99,6 +116,11 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
 
         // 假设后端返回的数据中包含 token 字段
         localStorage.setItem('satoken', res)
+        if (rememberPhone.value) {
+          localStorage.setItem('cityease_admin_phone', loginForm.phone)
+        } else {
+          localStorage.removeItem('cityease_admin_phone')
+        }
 
         ElMessage.success('登录成功，欢迎回来')
         // 跳转到大屏首页
@@ -112,6 +134,13 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
     }
   })
 }
+
+onMounted(() => {
+  const cachedPhone = localStorage.getItem('cityease_admin_phone')
+  if (cachedPhone) {
+    loginForm.phone = cachedPhone
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -124,6 +153,16 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
 }
 
 /* 营造科技感的背景光晕 */
@@ -198,6 +237,32 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
   font-size: 14px;
   color: #94a3b8;
   letter-spacing: 2px;
+}
+
+.feature-tags {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+
+  span {
+    font-size: 12px;
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+}
+
+.extra {
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
+.caps-lock-tip {
+  margin-left: auto;
+  font-size: 12px;
+  color: #f59e0b;
 }
 
 .login-form {

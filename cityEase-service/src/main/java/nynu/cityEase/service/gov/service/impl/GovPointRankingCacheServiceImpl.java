@@ -1,279 +1,257 @@
 package nynu.cityEase.service.gov.service.impl;
 
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import nynu.cityEase.api.vo.constants.RedisKeyConstants;
 import nynu.cityEase.api.vo.gov.BuildingPointStatsVO;
 import nynu.cityEase.api.vo.gov.PointRankingVO;
 import nynu.cityEase.service.gov.service.IGovPointRankingCacheService;
-import nynu.cityEase.service.gov.service.IGovPointRankingDataService;
+import nynu.cityEase.service.pms.repository.entity.PublicAreaDO;
+import nynu.cityEase.service.pms.repository.entity.RoomDO;
+import nynu.cityEase.service.pms.repository.mapper.PublicAreaMapper;
+import nynu.cityEase.service.pms.repository.mapper.RoomMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-/**
- * 积分排行榜缓存服务实现类
- * Created: 2026/3/18
- */
 @Service
 public class GovPointRankingCacheServiceImpl implements IGovPointRankingCacheService {
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
-    private IGovPointRankingDataService dataService;
+    private RoomMapper roomMapper;
 
-    // Redis Key 常量
-    private static final String ROOM_RANKING_KEY = "point:ranking:room";
-    private static final String BUILDING_STATS_KEY = "point:stats:building";
-    private static final String ROOM_RANKING_DETAIL_KEY = "point:ranking:room:detail:";
-    private static final String BUILDING_ROOM_RANKING_KEY = "point:ranking:building:room:";
-    private static final String CACHE_STATUS_KEY = "point:cache:status";
-
-    // 缓存过期时间（分钟）
-    private static final long CACHE_EXPIRE_MINUTES = 30;
+    @Autowired
+    private PublicAreaMapper publicAreaMapper;
 
     @Override
-    @Scheduled(cron = "0 */10 * * * ?") // 每10分钟执行一次
     public void refreshAllRankings() {
-        try {
-            refreshRoomRanking();
-            refreshBuildingStats();
-            updateCacheStatus("success", "定时刷新完成");
-        } catch (Exception e) {
-            updateCacheStatus("error", "定时刷新失败: " + e.getMessage());
+        refreshRoomRanking();
+        refreshBuildingStats();
+    }
+
+    @Override
+    public void clearAllRankings() {
+        redisTemplate.delete(RedisKeyConstants.GOV_POINT_ROOM_RANKING_KEY);
+        redisTemplate.delete(RedisKeyConstants.GOV_POINT_BUILDING_STATS_KEY);
+
+        Set<String> buildingKeys = redisTemplate.keys(RedisKeyConstants.GOV_POINT_BUILDING_ROOM_RANKING_KEY_PREFIX + "*");
+        if (buildingKeys != null && !buildingKeys.isEmpty()) {
+            redisTemplate.delete(buildingKeys);
         }
     }
 
     @Override
     public void refreshRoomRanking() {
-        try {
-            // 清除旧缓存
-            redisTemplate.delete(ROOM_RANKING_KEY);
-            
-            // 获取前100名房屋积分数据
-            List<PointRankingVO> rankings = dataService.getRoomPointRankingFromDB(100);
-            
-            // 使用ZSet存储排行榜数据
-            for (PointRankingVO ranking : rankings) {
-                // 按积分倒序存储（Redis ZSet默认是升序，所以用负数）
-                redisTemplate.opsForZSet().add(ROOM_RANKING_KEY, ranking.getRoomId(), -ranking.getPointsBalance());
-                
-                // 存储详细信息
-                String detailKey = ROOM_RANKING_DETAIL_KEY + ranking.getRoomId();
-                redisTemplate.opsForValue().set(detailKey, ranking, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            }
-            
-            // 设置排行榜过期时间
-            redisTemplate.expire(ROOM_RANKING_KEY, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            
-        } catch (Exception e) {
-            throw new RuntimeException("刷新房屋排行榜缓存失败", e);
-        }
+        List<PointRankingVO> ranking = queryRoomRanking(500);
+        redisTemplate.opsForValue().set(
+                RedisKeyConstants.GOV_POINT_ROOM_RANKING_KEY,
+                JSONUtil.toJsonStr(ranking),
+                30,
+                TimeUnit.MINUTES
+        );
     }
 
     @Override
     public void refreshBuildingStats() {
-        try {
-            // 清除旧缓存
-            redisTemplate.delete(BUILDING_STATS_KEY);
-            
-            // 获取楼栋统计数据
-            List<BuildingPointStatsVO> stats = dataService.getBuildingPointStatsFromDB();
-            
-            // 存储楼栋统计数据
-            redisTemplate.opsForValue().set(BUILDING_STATS_KEY, stats, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            
-        } catch (Exception e) {
-            throw new RuntimeException("刷新楼栋统计缓存失败", e);
-        }
+        List<BuildingPointStatsVO> stats = queryBuildingStats();
+        redisTemplate.opsForValue().set(
+                RedisKeyConstants.GOV_POINT_BUILDING_STATS_KEY,
+                JSONUtil.toJsonStr(stats),
+                30,
+                TimeUnit.MINUTES
+        );
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<PointRankingVO> getRoomRankingFromCache(Integer limit) {
-        try {
-            // 获取排名数据（按积分倒序）
-            Set<Object> roomIds = redisTemplate.opsForZSet().reverseRange(ROOM_RANKING_KEY, 0, limit - 1);
-            
-            if (roomIds == null || roomIds.isEmpty()) {
-                // 缓存为空，尝试刷新
-                refreshRoomRanking();
-                roomIds = redisTemplate.opsForZSet().reverseRange(ROOM_RANKING_KEY, 0, limit - 1);
-            }
-            
-            if (roomIds == null || roomIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-            
-            // 获取详细信息
-            List<PointRankingVO> result = new ArrayList<>();
-            int ranking = 1;
-            
-            for (Object roomIdObj : roomIds) {
-                Long roomId = Long.valueOf(roomIdObj.toString());
-                String detailKey = ROOM_RANKING_DETAIL_KEY + roomId;
-                PointRankingVO detail = (PointRankingVO) redisTemplate.opsForValue().get(detailKey);
-                
-                if (detail != null) {
-                    detail.setRanking(ranking++);
-                    result.add(detail);
-                }
-            }
-            
-            return result;
-            
-        } catch (Exception e) {
-            // 缓存异常时降级到数据库查询
-            System.err.println("从缓存获取排行榜失败，降级到数据库查询: " + e.getMessage());
-            return dataService.getRoomPointRankingFromDB(limit);
+        int finalLimit = (limit == null || limit <= 0) ? 50 : limit;
+        String json = redisTemplate.opsForValue().get(RedisKeyConstants.GOV_POINT_ROOM_RANKING_KEY);
+        List<PointRankingVO> ranking;
+        if (json == null || json.isEmpty()) {
+            ranking = queryRoomRanking(Math.max(finalLimit, 200));
+            redisTemplate.opsForValue().set(RedisKeyConstants.GOV_POINT_ROOM_RANKING_KEY, JSONUtil.toJsonStr(ranking), 30, TimeUnit.MINUTES);
+        } else {
+            ranking = JSONUtil.toList(json, PointRankingVO.class);
         }
+
+        return ranking.stream().limit(finalLimit).collect(Collectors.toList());
     }
 
     @Override
     public PointRankingVO getRoomRankingFromCache(Long roomId) {
-        try {
-            // 先尝试从缓存获取详细信息
-            String detailKey = ROOM_RANKING_DETAIL_KEY + roomId;
-            PointRankingVO detail = (PointRankingVO) redisTemplate.opsForValue().get(detailKey);
-            
-            if (detail != null) {
-                // 计算排名
-                Long rank = redisTemplate.opsForZSet().reverseRank(ROOM_RANKING_KEY, roomId);
-                if (rank != null) {
-                    detail.setRanking(rank.intValue() + 1);
-                }
-                return detail;
-            }
-            
-            // 缓存中没有，从数据库查询并缓存
-            detail = dataService.getRoomRankingFromDB(roomId);
-            if (detail != null) {
-                redisTemplate.opsForValue().set(detailKey, detail, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            }
-            
-            return detail;
-            
-        } catch (Exception e) {
-            // 缓存异常时降级到数据库查询
-            System.err.println("从缓存获取房屋排名失败，降级到数据库查询: " + e.getMessage());
-            return dataService.getRoomRankingFromDB(roomId);
+        if (roomId == null) {
+            return null;
         }
+        List<PointRankingVO> ranking = getRoomRankingFromCache(500);
+        return ranking.stream().filter(item -> roomId.equals(item.getRoomId())).findFirst().orElse(null);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<BuildingPointStatsVO> getBuildingStatsFromCache() {
-        try {
-            Object cached = redisTemplate.opsForValue().get(BUILDING_STATS_KEY);
-            if (cached != null) {
-                return (List<BuildingPointStatsVO>) cached;
-            }
-            
-            // 缓存为空，尝试刷新
-            refreshBuildingStats();
-            cached = redisTemplate.opsForValue().get(BUILDING_STATS_KEY);
-            
-            return cached != null ? (List<BuildingPointStatsVO>) cached : Collections.emptyList();
-            
-        } catch (Exception e) {
-            // 缓存异常时降级到数据库查询
-            System.err.println("从缓存获取楼栋统计失败，降级到数据库查询: " + e.getMessage());
-            return dataService.getBuildingPointStatsFromDB();
+        String json = redisTemplate.opsForValue().get(RedisKeyConstants.GOV_POINT_BUILDING_STATS_KEY);
+        if (json == null || json.isEmpty()) {
+            List<BuildingPointStatsVO> stats = queryBuildingStats();
+            redisTemplate.opsForValue().set(RedisKeyConstants.GOV_POINT_BUILDING_STATS_KEY, JSONUtil.toJsonStr(stats), 30, TimeUnit.MINUTES);
+            return stats;
         }
+        return JSONUtil.toList(json, BuildingPointStatsVO.class);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<PointRankingVO> getBuildingRoomRankingFromCache(Long areaId, Integer limit) {
-        try {
-            String buildingKey = BUILDING_ROOM_RANKING_KEY + areaId;
-            Object cached = redisTemplate.opsForValue().get(buildingKey);
-            
-            if (cached != null) {
-                return (List<PointRankingVO>) cached;
-            }
-            
-            // 缓存为空，从数据库查询并缓存
-            List<PointRankingVO> result = dataService.getBuildingRoomRankingFromDB(areaId, limit);
-            redisTemplate.opsForValue().set(buildingKey, result, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            
-            return result;
-            
-        } catch (Exception e) {
-            // 缓存异常时降级到数据库查询
-            System.err.println("从缓存获取楼栋排行失败，降级到数据库查询: " + e.getMessage());
-            return dataService.getBuildingRoomRankingFromDB(areaId, limit);
+        if (areaId == null) {
+            return Collections.emptyList();
         }
+
+        int finalLimit = (limit == null || limit <= 0) ? 50 : limit;
+        String key = RedisKeyConstants.GOV_POINT_BUILDING_ROOM_RANKING_KEY_PREFIX + areaId;
+        String json = redisTemplate.opsForValue().get(key);
+        List<PointRankingVO> ranking;
+        if (json == null || json.isEmpty()) {
+            ranking = queryBuildingRoomRanking(areaId, Math.max(finalLimit, 200));
+            redisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(ranking), 30, TimeUnit.MINUTES);
+        } else {
+            ranking = JSONUtil.toList(json, PointRankingVO.class);
+        }
+
+        return ranking.stream().limit(finalLimit).collect(Collectors.toList());
     }
 
     @Override
     public void updateRoomPoints(Long roomId, Integer pointsBalance) {
-        try {
-            // 更新排行榜中的积分
-            redisTemplate.opsForZSet().add(ROOM_RANKING_KEY, roomId, -pointsBalance);
-            
-            // 更新详细信息
-            PointRankingVO vo = new PointRankingVO();
-            vo.setRoomId(roomId);
-            vo.setPointsBalance(pointsBalance);
-            vo.setRankingChange(0);
-            
-            String detailKey = ROOM_RANKING_DETAIL_KEY + roomId;
-            redisTemplate.opsForValue().set(detailKey, vo, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            
-            // 清除相关楼栋缓存
-            String buildingKey = BUILDING_ROOM_RANKING_KEY + "unknown"; // 暂时清除所有楼栋缓存
-            redisTemplate.delete(buildingKey);
-            
-        } catch (Exception e) {
-            // 更新失败不影响主业务，记录日志即可
-            System.err.println("更新积分缓存失败: " + e.getMessage());
+        if (roomId == null) {
+            return;
         }
+        refreshRoomRanking();
     }
 
     @Override
     public void removeRoomRanking(Long roomId) {
-        try {
-            // 从排行榜中移除
-            redisTemplate.opsForZSet().remove(ROOM_RANKING_KEY, roomId);
-            
-            // 删除详细信息
-            String detailKey = ROOM_RANKING_DETAIL_KEY + roomId;
-            redisTemplate.delete(detailKey);
-            
-        } catch (Exception e) {
-            System.err.println("删除积分缓存失败: " + e.getMessage());
+        if (roomId == null) {
+            return;
         }
+        refreshRoomRanking();
     }
 
     @Override
     public String getCacheStatus() {
-        try {
-            Object status = redisTemplate.opsForValue().get(CACHE_STATUS_KEY);
-            return status != null ? status.toString() : "未知";
-        } catch (Exception e) {
-            return "获取缓存状态失败: " + e.getMessage();
-        }
+        Boolean hasRoom = redisTemplate.hasKey(RedisKeyConstants.GOV_POINT_ROOM_RANKING_KEY);
+        Boolean hasBuilding = redisTemplate.hasKey(RedisKeyConstants.GOV_POINT_BUILDING_STATS_KEY);
+        return "roomRanking=" + Boolean.TRUE.equals(hasRoom) + ", buildingStats=" + Boolean.TRUE.equals(hasBuilding);
     }
 
-    /**
-     * 更新缓存状态
-     */
-    private void updateCacheStatus(String status, String message) {
-        try {
-            Map<String, Object> statusInfo = new HashMap<>();
-            statusInfo.put("status", status);
-            statusInfo.put("message", message);
-            statusInfo.put("timestamp", new Date());
-            
-            String statusJson = statusInfo.toString();
-            redisTemplate.opsForValue().set(CACHE_STATUS_KEY, statusJson, 24, TimeUnit.HOURS);
-            
-        } catch (Exception e) {
-            System.err.println("更新缓存状态失败: " + e.getMessage());
+    private List<PointRankingVO> queryRoomRanking(int limit) {
+        LambdaQueryWrapper<RoomDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.gt(RoomDO::getPointsBalance, 0)
+                .orderByDesc(RoomDO::getPointsBalance)
+                .last("LIMIT " + limit);
+
+        List<RoomDO> rooms = roomMapper.selectList(queryWrapper);
+        Set<Long> areaIds = rooms.stream().map(RoomDO::getAreaId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, String> areaNameMap = getAreaNameMap(areaIds);
+
+        List<PointRankingVO> result = new ArrayList<>();
+        for (int i = 0; i < rooms.size(); i++) {
+            RoomDO room = rooms.get(i);
+            PointRankingVO vo = new PointRankingVO();
+            vo.setRanking(i + 1);
+            vo.setRoomId(room.getId());
+            vo.setRoomNum(room.getRoomNum());
+            vo.setAreaId(room.getAreaId());
+            vo.setAreaName(areaNameMap.get(room.getAreaId()));
+            vo.setPointsBalance(room.getPointsBalance());
+            vo.setRankingChange(0);
+            vo.setUpdateTime(room.getUpdateTime());
+            result.add(vo);
         }
+        return result;
+    }
+
+    private List<BuildingPointStatsVO> queryBuildingStats() {
+        LambdaQueryWrapper<PublicAreaDO> areaWrapper = new LambdaQueryWrapper<>();
+        areaWrapper.eq(PublicAreaDO::getLevel, 2);
+        List<PublicAreaDO> buildings = publicAreaMapper.selectList(areaWrapper);
+
+        List<BuildingPointStatsVO> result = new ArrayList<>();
+        for (PublicAreaDO building : buildings) {
+            LambdaQueryWrapper<RoomDO> roomWrapper = new LambdaQueryWrapper<>();
+            roomWrapper.eq(RoomDO::getAreaId, building.getId());
+            List<RoomDO> rooms = roomMapper.selectList(roomWrapper);
+            if (rooms.isEmpty()) {
+                continue;
+            }
+
+            BuildingPointStatsVO stats = new BuildingPointStatsVO();
+            stats.setAreaId(building.getId());
+            stats.setAreaName(building.getName());
+
+            int totalPoints = rooms.stream().mapToInt(room -> room.getPointsBalance() == null ? 0 : room.getPointsBalance()).sum();
+            stats.setTotalPoints(totalPoints);
+            stats.setRoomCount(rooms.size());
+            stats.setAvgPoints((double) totalPoints / rooms.size());
+            stats.setMaxPoints(rooms.stream().mapToInt(room -> room.getPointsBalance() == null ? 0 : room.getPointsBalance()).max().orElse(0));
+            stats.setMinPoints(rooms.stream().mapToInt(room -> room.getPointsBalance() == null ? 0 : room.getPointsBalance()).min().orElse(0));
+            stats.setUpdateTime(building.getUpdateTime());
+            result.add(stats);
+        }
+
+        result.sort((a, b) -> b.getTotalPoints().compareTo(a.getTotalPoints()));
+        for (int i = 0; i < result.size(); i++) {
+            result.get(i).setBuildingRanking(i + 1);
+        }
+
+        return result;
+    }
+
+    private List<PointRankingVO> queryBuildingRoomRanking(Long areaId, int limit) {
+        LambdaQueryWrapper<RoomDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(RoomDO::getAreaId, areaId)
+                .gt(RoomDO::getPointsBalance, 0)
+                .orderByDesc(RoomDO::getPointsBalance)
+                .last("LIMIT " + limit);
+
+        List<RoomDO> rooms = roomMapper.selectList(queryWrapper);
+        String areaName = getAreaName(areaId);
+
+        List<PointRankingVO> result = new ArrayList<>();
+        for (int i = 0; i < rooms.size(); i++) {
+            RoomDO room = rooms.get(i);
+            PointRankingVO vo = new PointRankingVO();
+            vo.setRanking(i + 1);
+            vo.setRoomId(room.getId());
+            vo.setRoomNum(room.getRoomNum());
+            vo.setAreaId(room.getAreaId());
+            vo.setAreaName(areaName);
+            vo.setPointsBalance(room.getPointsBalance());
+            vo.setRankingChange(0);
+            vo.setUpdateTime(room.getUpdateTime());
+            result.add(vo);
+        }
+        return result;
+    }
+
+    private Map<Long, String> getAreaNameMap(Set<Long> areaIds) {
+        if (areaIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        LambdaQueryWrapper<PublicAreaDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(PublicAreaDO::getId, areaIds);
+        List<PublicAreaDO> areas = publicAreaMapper.selectList(wrapper);
+        return areas.stream().collect(Collectors.toMap(PublicAreaDO::getId, PublicAreaDO::getName));
+    }
+
+    private String getAreaName(Long areaId) {
+        if (areaId == null) {
+            return null;
+        }
+        PublicAreaDO area = publicAreaMapper.selectById(areaId);
+        return area == null ? null : area.getName();
     }
 }
