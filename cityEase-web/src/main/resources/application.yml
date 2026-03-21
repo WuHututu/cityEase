@@ -72,6 +72,8 @@ xxl:
 
 aliyun:
   oss:
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:test-access-key-id}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:test-access-key-secret}
     bucket-name: wuhututu          # 存储桶名称
     endpoint: oss-cn-hangzhou.aliyuncs.com  # 地域Endpoint
 
@@ -82,4 +84,3 @@ upload:
   type: aliyun  # 上传类型：local-本地存储，aliyun-阿里云 OSS
   path: ${user.dir}/uploads/images/
   url-prefix: /uploads/images/
-
