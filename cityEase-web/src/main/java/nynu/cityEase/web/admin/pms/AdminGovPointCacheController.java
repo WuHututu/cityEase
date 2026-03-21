@@ -5,12 +5,13 @@ import io.swagger.annotations.ApiOperation;
 import nynu.cityEase.api.vo.ResVo;
 import nynu.cityEase.service.gov.service.IGovPointRankingCacheService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/admin/gov/point/cache")
+@RequestMapping({"/admin/gov/cache", "/admin/gov/point/cache"})
 @Api(tags = "【后台】积分缓存管理")
 public class AdminGovPointCacheController {
 
@@ -31,9 +32,13 @@ public class AdminGovPointCacheController {
         return ResVo.ok("缓存清除成功");
     }
 
-    @PostMapping("/status")
+    @GetMapping("/status")
     @ApiOperation("查询积分缓存状态")
-    public ResVo<String> status() {
-        return ResVo.ok(cacheService.getCacheStatus());
+    public ResVo<Map<String, Object>> status() {
+        String status = cacheService.getCacheStatus();
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", status);
+        result.put("healthy", status.contains("roomRanking=true") && status.contains("buildingStats=true"));
+        return ResVo.ok(result);
     }
 }
