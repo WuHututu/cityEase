@@ -38,4 +38,11 @@ public interface IGovPointRankingService {
      * @return 该楼栋内的房屋积分排行
      */
     List<PointRankingVO> getBuildingRoomRanking(Long areaId, Integer limit);
+
+    /**
+     * 获取房屋积分余额
+     * @param roomId 房屋ID
+     * @return 积分余额
+     */
+    Long getRoomPointBalance(Long roomId);
 }

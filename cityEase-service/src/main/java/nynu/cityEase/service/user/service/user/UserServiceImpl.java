@@ -1,6 +1,7 @@
 package nynu.cityEase.service.user.service.user;
 
 import cn.dev33.satoken.stp.StpUtil;
+import nynu.cityEase.api.vo.user.UserInfoVO;
 import nynu.cityEase.api.vo.user.dto.BaseUserInfoDTO;
 import nynu.cityEase.core.util.IpUtil;
 import nynu.cityEase.service.user.IUserService;
@@ -9,6 +10,7 @@ import nynu.cityEase.service.user.repository.dao.UserDao;
 import nynu.cityEase.service.user.repository.entity.IpInfo;
 import nynu.cityEase.service.user.repository.entity.UserDO;
 import nynu.cityEase.service.user.repository.entity.UserInfoDO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -69,5 +71,17 @@ public class UserServiceImpl implements IUserService {
         // UserDao 的 saveUser 内部已经做了判断：如果有 ID 则执行 updateById
         userDao.saveUser(userDO);
         return true;
+    }
+
+    @Override
+    public UserInfoVO getUserInfo(Long userId) {
+        UserInfoDO userInfo = userDao.getByUserId(userId);
+        if (userInfo == null) {
+            return null;
+        }
+        
+        UserInfoVO vo = new UserInfoVO();
+        BeanUtils.copyProperties(userInfo, vo);
+        return vo;
     }
 }
