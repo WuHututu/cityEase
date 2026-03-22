@@ -94,8 +94,6 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
     @Override
     public List<AdminAreaTreeVO> getAdminAreaTree() {
         List<PublicAreaDO> list = pmsDao.list(new LambdaQueryWrapper<PublicAreaDO>().orderByAsc(PublicAreaDO::getSort));
-        Map<Long, PublicAreaDO> areaMap = list.stream().collect(Collectors.toMap(PublicAreaDO::getId, area -> area, (a, b) -> a));
-
         Map<Long, AdminAreaTreeVO> idMap = list.stream().map(area -> {
             AdminAreaTreeVO vo = new AdminAreaTreeVO();
             vo.setId(area.getId());
@@ -105,7 +103,7 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
             vo.setSort(area.getSort());
             vo.setChildren(new ArrayList<>());
             vo.setAreaType(null);
-            vo.setFullAddress(buildFullAddress(area.getId(), areaMap));
+            vo.setFullAddress(buildFullAddressByMap(area.getId(), list));
             return vo;
         }).collect(Collectors.toMap(AdminAreaTreeVO::getId, vo -> vo, (a, b) -> a));
 
@@ -158,6 +156,10 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
     }
 
     private void upsertAdminArea(AdminAreaUpsertReq req) {
+        if (req.getAreaName() == null || req.getAreaName().trim().isEmpty()) {
+            throw ExceptionUtil.of(StatusEnum.ILLEGAL_ARGUMENTS_MIXED, "区域名称不能为空");
+        }
+
         Long parentId = req.getParentId() == null ? 0L : req.getParentId();
         int level;
         if (parentId == 0L) {
@@ -185,6 +187,12 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
         redisTemplate.delete(RedisKeyConstants.PUBLIC_AREA_TREE_KEY);
     }
 
+    /**
+     * 1. 把所有节点放进 Map<ID, Node>，方便快速查找。
+     * 2. 遍历列表，尝试去找每个节点的“父亲”。
+     * 3. 找到了父亲 ->把自己加到父亲的 children 里。
+     * 4. 没找到父亲 -> 说明自己就是顶级节点 (Root)，加到结果集。
+     */
     private List<PublicAreaTreeVO> buildTree(List<PublicAreaDO> allList) {
         if (CollUtil.isEmpty(allList)) {
             return new ArrayList<>();
@@ -245,42 +253,29 @@ public class PmsPublicAreaServiceImpl implements IPmsPublicAreaService {
         }
     }
 
-    private String buildFullAddress(Long areaId, Map<Long, PublicAreaDO> areaMap) {
+    private String buildFullAddressByMap(Long areaId, List<PublicAreaDO> allAreas) {
         if (areaId == null) {
             return "";
         }
 
+        Map<Long, PublicAreaDO> areaMap = allAreas.stream().collect(Collectors.toMap(PublicAreaDO::getId, a -> a));
         StringBuilder fullName = new StringBuilder();
         Long currentId = areaId;
+
         int maxDepth = 10;
         while (currentId != null && currentId != 0L && maxDepth-- > 0) {
             PublicAreaDO area = areaMap.get(currentId);
             if (area == null) {
                 break;
             }
+
             if (!fullName.isEmpty()) {
                 fullName.insert(0, "-");
             }
             fullName.insert(0, area.getName());
             currentId = area.getParentId();
         }
+
         return fullName.toString();
-    }
-
-    @Override
-    public List<RoomDO> getRoomsByArea(Long areaId) {
-        if (areaId == null) {
-            return new ArrayList<>();
-        }
-        LambdaQueryWrapper<RoomDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(RoomDO::getAreaId, areaId).orderByAsc(RoomDO::getRoomNum);
-        return roomMapper.selectList(wrapper);
-    }
-
-    @Override
-    public List<RoomDO> searchRooms(String keyword) {
-        LambdaQueryWrapper<RoomDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(StrUtil.isNotBlank(keyword), RoomDO::getRoomNum, keyword).orderByAsc(RoomDO::getRoomNum);
-        return roomMapper.selectList(wrapper);
     }
 }
