@@ -4,12 +4,10 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-/**
- * 后台：公共区域 新增/编辑 请求
- *
- * 说明：为了兼容管理端现有表单字段（areaName/areaType/areaAddress），这里只强约束 areaName/parentId。
- * areaType/areaAddress 暂不入库（当前表结构 pms_public_area 仅有 name/parent_id/level/sort）。
- */
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+
 @Data
 @ApiModel("〖后台〗公共区域新增/编辑请求")
 public class AdminAreaUpsertReq {
@@ -18,9 +16,12 @@ public class AdminAreaUpsertReq {
   private Long id;
 
   @ApiModelProperty("父级ID（顶级可不传或传0）")
+  @Min(value = 0, message = "父级ID不能小于0")
   private Long parentId;
 
   @ApiModelProperty("区域名称")
+  @NotBlank(message = "区域名称不能为空")
+  @Size(max = 50, message = "区域名称长度不能超过50")
   private String areaName;
 
   @ApiModelProperty("区域类型（前端占位字段，后端暂不入库）")

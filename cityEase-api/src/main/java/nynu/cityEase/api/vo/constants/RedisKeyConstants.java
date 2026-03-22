@@ -28,4 +28,11 @@ public class RedisKeyConstants {
      */
     public static final String DASHBOARD_METRICS_KEY = "cityease:dashboard:metrics";
 
+    /**
+     * 积分排行榜缓存
+     */
+    public static final String GOV_POINT_ROOM_RANKING_KEY = "gov:point:ranking:room";
+    public static final String GOV_POINT_BUILDING_STATS_KEY = "gov:point:ranking:building:stats";
+    public static final String GOV_POINT_BUILDING_ROOM_RANKING_KEY_PREFIX = "gov:point:ranking:building:";
+
 }

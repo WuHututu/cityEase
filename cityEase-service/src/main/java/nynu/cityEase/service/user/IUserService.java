@@ -1,5 +1,6 @@
 package nynu.cityEase.service.user;
 
+import nynu.cityEase.api.vo.user.UserInfoVO;
 import nynu.cityEase.api.vo.user.dto.BaseUserInfoDTO;
 import nynu.cityEase.service.user.repository.entity.UserDO;
 
@@ -18,4 +19,9 @@ public interface IUserService {
     UserDO getById(Long userId);
 
     boolean updateById(UserDO userDO);
+
+    /**
+     * 获取用户信息
+     */
+    UserInfoVO getUserInfo(Long userId);
 }

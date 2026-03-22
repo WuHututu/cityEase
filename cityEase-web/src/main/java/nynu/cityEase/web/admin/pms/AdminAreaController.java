@@ -7,14 +7,17 @@ import nynu.cityEase.api.vo.pms.AdminAreaTreeVO;
 import nynu.cityEase.api.vo.pms.AdminAreaUpsertReq;
 import nynu.cityEase.service.pms.service.IPmsPublicAreaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/pms/area")
 @Api(tags = "〖后台〗公共区域管理")
+@Validated
 public class AdminAreaController {
 
   @Autowired
@@ -28,14 +31,14 @@ public class AdminAreaController {
 
   @PostMapping("/save")
   @ApiOperation("新增公共区域")
-  public ResVo<String> save(@RequestBody AdminAreaUpsertReq req) {
+  public ResVo<String> save(@Valid @RequestBody AdminAreaUpsertReq req) {
     publicAreaService.saveAdminArea(req);
     return ResVo.ok();
   }
 
   @PostMapping("/update")
   @ApiOperation("编辑公共区域")
-  public ResVo<String> update(@RequestBody AdminAreaUpsertReq req) {
+  public ResVo<String> update(@Valid @RequestBody AdminAreaUpsertReq req) {
     publicAreaService.updateAdminArea(req);
     return ResVo.ok();
   }

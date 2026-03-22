@@ -4,6 +4,7 @@ import nynu.cityEase.api.vo.pms.AdminAreaTreeVO;
 import nynu.cityEase.api.vo.pms.AdminAreaUpsertReq;
 import nynu.cityEase.api.vo.pms.PublicAreaReq;
 import nynu.cityEase.api.vo.pms.PublicAreaTreeVO;
+import nynu.cityEase.service.pms.repository.entity.RoomDO;
 
 import java.util.List;
 
@@ -52,4 +53,14 @@ public interface IPmsPublicAreaService {
      * @return 完整名称 (如: 江南星城-1号楼-1单元)
      */
     String getFullAreaName(Long areaId);
+
+    /**
+     * 根据区域查询房屋
+     */
+    List<RoomDO> getRoomsByArea(Long areaId);
+
+    /**
+     * 按关键词搜索房屋（房号）
+     */
+    List<RoomDO> searchRooms(String keyword);
 }
