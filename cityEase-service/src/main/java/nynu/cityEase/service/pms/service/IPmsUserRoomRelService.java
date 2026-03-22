@@ -5,7 +5,7 @@ import nynu.cityEase.api.vo.pms.AuditUserRoomReq;
 import nynu.cityEase.api.vo.pms.UserRoomBindReq;
 import nynu.cityEase.api.vo.pms.UserRoomQueryReq;
 import nynu.cityEase.api.vo.pms.UserRoomVO;
-import nynu.cityEase.api.vo.user.UserRoomRelVO;
+//import nynu.cityEase.api.vo.user.UserRoomRelVO;
 import nynu.cityEase.service.pms.repository.entity.UserRoomRelDO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
@@ -45,12 +45,12 @@ public interface IPmsUserRoomRelService extends IService<UserRoomRelDO> {
     /**
      * 获取用户的房屋列表
      */
-    List<UserRoomRelVO> getUserRooms(Long userId);
-
-    /**
-     * 获取用户当前绑定的房屋
-     */
-    UserRoomRelVO getUserCurrentRoom(Long userId);
+//    List<UserRoomRelVO> getUserRooms(Long userId);
+//
+//    /**
+//     * 获取用户当前绑定的房屋
+//     */
+//    UserRoomRelVO getUserCurrentRoom(Long userId);
 
     /**
      * 绑定房屋

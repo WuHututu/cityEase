@@ -1,7 +1,7 @@
 package nynu.cityEase.service.user.service.user;
 
 import cn.dev33.satoken.stp.StpUtil;
-import nynu.cityEase.api.vo.user.UserInfoVO;
+//import nynu.cityEase.api.vo.user.UserInfoVO;
 import nynu.cityEase.api.vo.user.dto.BaseUserInfoDTO;
 import nynu.cityEase.core.util.IpUtil;
 import nynu.cityEase.service.user.IUserService;
@@ -73,15 +73,15 @@ public class UserServiceImpl implements IUserService {
         return true;
     }
 
-    @Override
-    public UserInfoVO getUserInfo(Long userId) {
-        UserInfoDO userInfo = userDao.getByUserId(userId);
-        if (userInfo == null) {
-            return null;
-        }
-        
-        UserInfoVO vo = new UserInfoVO();
-        BeanUtils.copyProperties(userInfo, vo);
-        return vo;
-    }
+//    @Override
+//    public UserInfoVO getUserInfo(Long userId) {
+//        UserInfoDO userInfo = userDao.getByUserId(userId);
+//        if (userInfo == null) {
+//            return null;
+//        }
+//
+//        UserInfoVO vo = new UserInfoVO();
+//        BeanUtils.copyProperties(userInfo, vo);
+//        return vo;
+//    }
 }

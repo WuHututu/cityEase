@@ -15,7 +15,7 @@ import nynu.cityEase.api.vo.pms.AuditUserRoomReq;
 import nynu.cityEase.api.vo.pms.UserRoomBindReq;
 import nynu.cityEase.api.vo.pms.UserRoomQueryReq;
 import nynu.cityEase.api.vo.pms.UserRoomVO;
-import nynu.cityEase.api.vo.user.UserRoomRelVO;
+//import nynu.cityEase.api.vo.user.UserRoomRelVO;
 import nynu.cityEase.service.pms.repository.entity.UserRoomRelDO;
 import nynu.cityEase.service.pms.repository.mapper.UserRoomRelMapper;
 import nynu.cityEase.service.pms.service.IPmsPublicAreaService;
@@ -256,76 +256,76 @@ public class PmsUserRoomRelServiceImpl extends ServiceImpl<UserRoomRelMapper, Us
         return rel != null ? rel.getRoomId() : null;
     }
 
-    @Override
-    public List<UserRoomRelVO> getUserRooms(Long userId) {
-        LambdaQueryWrapper<UserRoomRelDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserRoomRelDO::getUserId, userId)
-               .eq(UserRoomRelDO::getStatus, 2) // 已审核通过
-               .orderByDesc(UserRoomRelDO::getIsCurrent) // 当前房屋排在前面
-               .orderByDesc(UserRoomRelDO::getCreateTime);
-        
-        List<UserRoomRelDO> rels = this.list(wrapper);
-        
-        List<UserRoomRelVO> result = new ArrayList<>();
-        for (UserRoomRelDO rel : rels) {
-            UserRoomRelVO vo = new UserRoomRelVO();
-            vo.setRelId(rel.getId());
-            vo.setUserId(rel.getUserId());
-            vo.setRoomId(rel.getRoomId());
-            vo.setRelationType(rel.getRelationType());
-            vo.setStatus(rel.getStatus());
-            vo.setIsCurrent(rel.getIsCurrent());
-            vo.setCreateTime(rel.getCreateTime());
-            
-            // 查询房屋信息
-            RoomDO room = roomMapper.selectById(rel.getRoomId());
-            if (room != null) {
-                vo.setRoomNum(room.getRoomNum());
-                vo.setAreaId(room.getAreaId());
-                String areaFullName = publicAreaService.getFullAreaName(room.getAreaId());
-                vo.setFullRoomName(areaFullName + "-" + room.getRoomNum());
-            }
-            
-            result.add(vo);
-        }
-        
-        return result;
-    }
-
-    @Override
-    public UserRoomRelVO getUserCurrentRoom(Long userId) {
-        LambdaQueryWrapper<UserRoomRelDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserRoomRelDO::getUserId, userId)
-               .eq(UserRoomRelDO::getStatus, 2) // 已审核通过
-               .eq(UserRoomRelDO::getIsCurrent, 1) // 当前房屋
-               .orderByDesc(UserRoomRelDO::getCreateTime)
-               .last("LIMIT 1");
-        
-        UserRoomRelDO rel = this.getOne(wrapper);
-        if (rel == null) {
-            return null;
-        }
-        
-        UserRoomRelVO vo = new UserRoomRelVO();
-        vo.setRelId(rel.getId());
-        vo.setUserId(rel.getUserId());
-        vo.setRoomId(rel.getRoomId());
-        vo.setRelationType(rel.getRelationType());
-        vo.setStatus(rel.getStatus());
-        vo.setIsCurrent(rel.getIsCurrent());
-        vo.setCreateTime(rel.getCreateTime());
-        
-        // 查询房屋信息
-        RoomDO room = roomMapper.selectById(rel.getRoomId());
-        if (room != null) {
-            vo.setRoomNum(room.getRoomNum());
-            vo.setAreaId(room.getAreaId());
-            String areaFullName = publicAreaService.getFullAreaName(room.getAreaId());
-            vo.setFullRoomName(areaFullName + "-" + room.getRoomNum());
-        }
-        
-        return vo;
-    }
+//    @Override
+//    public List<UserRoomRelVO> getUserRooms(Long userId) {
+//        LambdaQueryWrapper<UserRoomRelDO> wrapper = new LambdaQueryWrapper<>();
+//        wrapper.eq(UserRoomRelDO::getUserId, userId)
+//               .eq(UserRoomRelDO::getStatus, 2) // 已审核通过
+//               .orderByDesc(UserRoomRelDO::getIsCurrent) // 当前房屋排在前面
+//               .orderByDesc(UserRoomRelDO::getCreateTime);
+//
+//        List<UserRoomRelDO> rels = this.list(wrapper);
+//
+//        List<UserRoomRelVO> result = new ArrayList<>();
+//        for (UserRoomRelDO rel : rels) {
+//            UserRoomRelVO vo = new UserRoomRelVO();
+//            vo.setRelId(rel.getId());
+//            vo.setUserId(rel.getUserId());
+//            vo.setRoomId(rel.getRoomId());
+//            vo.setRelationType(rel.getRelationType());
+//            vo.setStatus(rel.getStatus());
+//            vo.setIsCurrent(rel.getIsCurrent());
+//            vo.setCreateTime(rel.getCreateTime());
+//
+//            // 查询房屋信息
+//            RoomDO room = roomMapper.selectById(rel.getRoomId());
+//            if (room != null) {
+//                vo.setRoomNum(room.getRoomNum());
+//                vo.setAreaId(room.getAreaId());
+//                String areaFullName = publicAreaService.getFullAreaName(room.getAreaId());
+//                vo.setFullRoomName(areaFullName + "-" + room.getRoomNum());
+//            }
+//
+//            result.add(vo);
+//        }
+//
+//        return result;
+//    }
+//
+//    @Override
+//    public UserRoomRelVO getUserCurrentRoom(Long userId) {
+//        LambdaQueryWrapper<UserRoomRelDO> wrapper = new LambdaQueryWrapper<>();
+//        wrapper.eq(UserRoomRelDO::getUserId, userId)
+//               .eq(UserRoomRelDO::getStatus, 2) // 已审核通过
+//               .eq(UserRoomRelDO::getIsCurrent, 1) // 当前房屋
+//               .orderByDesc(UserRoomRelDO::getCreateTime)
+//               .last("LIMIT 1");
+//
+//        UserRoomRelDO rel = this.getOne(wrapper);
+//        if (rel == null) {
+//            return null;
+//        }
+//
+//        UserRoomRelVO vo = new UserRoomRelVO();
+//        vo.setRelId(rel.getId());
+//        vo.setUserId(rel.getUserId());
+//        vo.setRoomId(rel.getRoomId());
+//        vo.setRelationType(rel.getRelationType());
+//        vo.setStatus(rel.getStatus());
+//        vo.setIsCurrent(rel.getIsCurrent());
+//        vo.setCreateTime(rel.getCreateTime());
+//
+//        // 查询房屋信息
+//        RoomDO room = roomMapper.selectById(rel.getRoomId());
+//        if (room != null) {
+//            vo.setRoomNum(room.getRoomNum());
+//            vo.setAreaId(room.getAreaId());
+//            String areaFullName = publicAreaService.getFullAreaName(room.getAreaId());
+//            vo.setFullRoomName(areaFullName + "-" + room.getRoomNum());
+//        }
+//
+//        return vo;
+//    }
 
     @Override
     public boolean bindRoom(Long userId, Long roomId) {

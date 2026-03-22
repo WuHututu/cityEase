@@ -7,11 +7,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import nynu.cityEase.api.exception.ExceptionUtil;
 import nynu.cityEase.api.vo.constants.StatusEnum;
-import nynu.cityEase.api.vo.gov.GoodsQueryReq;
-import nynu.cityEase.api.vo.gov.GoodsVO;
-import nynu.cityEase.api.vo.gov.PointRedeemRecordVO;
 import nynu.cityEase.api.vo.gov.PointRedeemReq;
-import nynu.cityEase.api.vo.gov.RedeemRecordQueryReq;
+
 import nynu.cityEase.service.gov.repository.entity.GovPointGoodsDO;
 import nynu.cityEase.service.gov.repository.entity.GovPointOrderDO;
 import nynu.cityEase.service.gov.repository.mapper.GovPointGoodsMapper;
@@ -92,90 +89,90 @@ public class GovPointGoodsServiceImpl extends ServiceImpl<GovPointGoodsMapper, G
         orderMapper.insert(order);
     }
 
-    @Override
-    public List<GoodsVO> getGoodsList(GoodsQueryReq req) {
-        LambdaQueryWrapper<GovPointGoodsDO> wrapper = new LambdaQueryWrapper<>();
-        
-        if (req.getStatus() != null) {
-            wrapper.eq(GovPointGoodsDO::getStatus, req.getStatus());
-        }
-        
-        wrapper.orderByDesc(GovPointGoodsDO::getCreateTime);
-        
-        // 限制返回数量
-        if (req.getSize() != null && req.getSize() > 0) {
-            wrapper.last("LIMIT " + req.getSize());
-        }
-        
-        List<GovPointGoodsDO> goodsList = this.list(wrapper);
-        
-        List<GoodsVO> result = new ArrayList<>();
-        for (GovPointGoodsDO goods : goodsList) {
-            GoodsVO vo = new GoodsVO();
-            BeanUtils.copyProperties(goods, vo);
-            result.add(vo);
-        }
-        
-        return result;
-    }
-
-    @Override
-    public GoodsVO getGoodsDetail(Long id) {
-        GovPointGoodsDO goods = this.getById(id);
-        if (goods == null) {
-            return null;
-        }
-        
-        GoodsVO vo = new GoodsVO();
-        BeanUtils.copyProperties(goods, vo);
-        return vo;
-    }
-
-    @Override
-    public Page<PointRedeemRecordVO> getRedeemRecordPage(RedeemRecordQueryReq req) {
-        // 创建分页对象
-        Page<GovPointOrderDO> page = new Page<>(req.getCurrent(), req.getSize());
-        
-        // 构建查询条件
-        LambdaQueryWrapper<GovPointOrderDO> wrapper = new LambdaQueryWrapper<>();
-        
-        if (req.getUserId() != null) {
-            wrapper.eq(GovPointOrderDO::getUserId, req.getUserId());
-        }
-        
-        if (req.getStatus() != null) {
-            wrapper.eq(GovPointOrderDO::getStatus, req.getStatus());
-        }
-        
-        // 按创建时间倒序
-        wrapper.orderByDesc(GovPointOrderDO::getCreateTime);
-        
-        // 执行查询
-        Page<GovPointOrderDO> result = orderMapper.selectPage(page, wrapper);
-        
-        // 转换为VO
-        Page<PointRedeemRecordVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        List<PointRedeemRecordVO> voList = new ArrayList<>();
-        
-        for (GovPointOrderDO order : result.getRecords()) {
-            PointRedeemRecordVO vo = new PointRedeemRecordVO();
-            BeanUtils.copyProperties(order, vo);
-            voList.add(vo);
-        }
-        
-        voPage.setRecords(voList);
-        return voPage;
-    }
-
-    @Override
-    public PointRedeemRecordVO getRedeemRecordDetail(Long id) {
-        GovPointOrderDO order = orderMapper.selectById(id);
-        if (order == null) {
-            return null;
-        }
-        
-        PointRedeemRecordVO vo = new PointRedeemRecordVO();
-        BeanUtils.copyProperties(order, vo);
-        return vo;
-    }
+//    @Override
+//    public List<GoodsVO> getGoodsList(GoodsQueryReq req) {
+//        LambdaQueryWrapper<GovPointGoodsDO> wrapper = new LambdaQueryWrapper<>();
+//
+//        if (req.getStatus() != null) {
+//            wrapper.eq(GovPointGoodsDO::getStatus, req.getStatus());
+//        }
+//
+//        wrapper.orderByDesc(GovPointGoodsDO::getCreateTime);
+//
+//        // 限制返回数量
+//        if (req.getSize() != null && req.getSize() > 0) {
+//            wrapper.last("LIMIT " + req.getSize());
+//        }
+//
+//        List<GovPointGoodsDO> goodsList = this.list(wrapper);
+//
+//        List<GoodsVO> result = new ArrayList<>();
+//        for (GovPointGoodsDO goods : goodsList) {
+//            GoodsVO vo = new GoodsVO();
+//            BeanUtils.copyProperties(goods, vo);
+//            result.add(vo);
+//        }
+//
+//        return result;
+//    }
+//
+//    @Override
+//    public GoodsVO getGoodsDetail(Long id) {
+//        GovPointGoodsDO goods = this.getById(id);
+//        if (goods == null) {
+//            return null;
+//        }
+//
+//        GoodsVO vo = new GoodsVO();
+//        BeanUtils.copyProperties(goods, vo);
+//        return vo;
+//    }
+//
+//    @Override
+//    public Page<PointRedeemRecordVO> getRedeemRecordPage(RedeemRecordQueryReq req) {
+//        // 创建分页对象
+//        Page<GovPointOrderDO> page = new Page<>(req.getCurrent(), req.getSize());
+//
+//        // 构建查询条件
+//        LambdaQueryWrapper<GovPointOrderDO> wrapper = new LambdaQueryWrapper<>();
+//
+//        if (req.getUserId() != null) {
+//            wrapper.eq(GovPointOrderDO::getUserId, req.getUserId());
+//        }
+//
+//        if (req.getStatus() != null) {
+//            wrapper.eq(GovPointOrderDO::getStatus, req.getStatus());
+//        }
+//
+//        // 按创建时间倒序
+//        wrapper.orderByDesc(GovPointOrderDO::getCreateTime);
+//
+//        // 执行查询
+//        Page<GovPointOrderDO> result = orderMapper.selectPage(page, wrapper);
+//
+//        // 转换为VO
+//        Page<PointRedeemRecordVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+//        List<PointRedeemRecordVO> voList = new ArrayList<>();
+//
+//        for (GovPointOrderDO order : result.getRecords()) {
+//            PointRedeemRecordVO vo = new PointRedeemRecordVO();
+//            BeanUtils.copyProperties(order, vo);
+//            voList.add(vo);
+//        }
+//
+//        voPage.setRecords(voList);
+//        return voPage;
+//    }
+//
+//    @Override
+//    public PointRedeemRecordVO getRedeemRecordDetail(Long id) {
+//        GovPointOrderDO order = orderMapper.selectById(id);
+//        if (order == null) {
+//            return null;
+//        }
+//
+//        PointRedeemRecordVO vo = new PointRedeemRecordVO();
+//        BeanUtils.copyProperties(order, vo);
+//        return vo;
+//    }
 }
