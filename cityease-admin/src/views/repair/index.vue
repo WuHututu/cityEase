@@ -252,15 +252,6 @@ import request from '@/utils/request'
 
 // --- 提交处理结果弹窗 ---
 
-const handleCloseCompleteDialog = () => {
-  completeVisible.value = false
-  completeFormRef.value?.resetFields()
-  completeForm.handleImages = []
-  completeOrderId.value = null
-}
-
-
-
 const route = useRoute()
 
 const statusText = (s: any) => {
@@ -308,7 +299,7 @@ const queryParams = reactive({
 })
 
 // 预设报修类型选项（后续可从字典表读取）
-const repairTypeOptions = ref([])
+const repairTypeOptions = ref<Array<{ label: string; value: string }>>([])
 
 // 从字典动态加载报修类型
 const fetchRepairTypes = async () => {
@@ -462,11 +453,11 @@ const submitDispatch = async () => {
   if (!dispatchFormRef.value) return
   await dispatchFormRef.value.validate(async (valid) => {
     if (valid) {
-      submitting.value = true
+        submitting.value = true
       try {
         await dispatchOrder({
-          orderId: currentOrderId.value,
-          handlerId: dispatchForm.handlerId
+          orderId: Number(currentOrderId.value),
+          handlerId: Number(dispatchForm.handlerId)
         })
         ElMessage.success('派单成功！')
         handleCloseDialog()
@@ -481,8 +472,6 @@ const submitDispatch = async () => {
 }
 
 // 统一解包：你的 request 返回是 {status, result}
-const unwrap = (res: any) => res?.result ?? res?.data?.data ?? res?.data ?? res
-
 const completeVisible = ref(false)
 const completeSubmitting = ref(false)
 const completeFormRef = ref()
@@ -502,8 +491,6 @@ const openCompleteDialog = (row: any) => {
   completeOrderId.value = String(row?.id ?? row?.orderId ?? '')
   completeVisible.value = true
 }
-
-const addHandleImage = () => completeForm.handleImages.push('')
 
 const closeCompleteDialog = () => {
   completeVisible.value = false
@@ -554,7 +541,7 @@ const handleImageUpload = async (options: any) => {
   }
 }
 
-const handleImageSuccess = (response: any) => {
+const handleImageSuccess = (_response: any) => {
   // 已经在 handleImageUpload 中处理了
 }
 
@@ -586,7 +573,7 @@ const submitComplete = async () => {
   completeSubmitting.value = true
   try {
     await completeOrder({
-      orderId: completeOrderId.value,
+      orderId: Number(completeOrderId.value),
       handleResult: completeForm.handleResult.trim(),
       handleImages: completeForm.handleImages.map(s => s?.trim()).filter(Boolean)
     })

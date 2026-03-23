@@ -103,23 +103,6 @@ const beforeUpload = (file: File) => {
   return true
 }
 
-// 上传成功
-const handleSuccess = (response: any) => {
-  // response 结构：{ status: { code, msg }, result: url }
-  const url = response.result || response.data?.data || response.data
-  if (url) {
-    emit('update:modelValue', url)
-    ElMessage.success('上传成功')
-  } else {
-    ElMessage.error(response.status?.msg || '上传失败')
-  }
-}
-
-// 上传失败
-const handleError = () => {
-  ElMessage.error('上传失败，请重试')
-}
-
 // 预览图片
 const handlePreview = () => {
   previewVisible.value = true

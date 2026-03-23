@@ -16,7 +16,7 @@ export const updateFeeBill = (data: any) => request.post('/admin/pms/fee/update'
 export const deleteFeeBill = (id: number) => request.delete(`/admin/pms/fee/delete/${id}`)
 
 // 批量生成账单
-export const generateFeeBills = (data: { feeMonth: string }) => request.post('/admin/pms/fee/generate', data)
+export const generateFeeBills = (data: { feeMonth: string; amount: number }) => request.post('/admin/pms/fee/generate', data)
 
 // 标记为已缴费
 export const markFeePaid = (data: { id: number }) => request.post('/admin/pms/fee/markPaid', data)

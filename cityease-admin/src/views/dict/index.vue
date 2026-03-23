@@ -120,7 +120,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 import { listTypes, saveType, updateType, deleteType, listData, saveData, updateData, deleteData } from '@/api/dict'
 
 // ==================== 字典类型管理 ====================

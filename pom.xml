@@ -10,7 +10,6 @@
         <module>cityEase-api</module>
         <module>cityEase-core</module>
         <module>cityEase-service</module>
-        <module>cityEase-ui</module>
         <module>cityEase-web</module>
     </modules>
 
@@ -43,11 +42,6 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>cityEase-web</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>cityEase-ui</artifactId>
                 <version>1.0-SNAPSHOT</version>
             </dependency>
             <dependency>

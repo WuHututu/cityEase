@@ -6,7 +6,6 @@
       <module fileurl="file://$PROJECT_DIR$/cityEase-api.iml" filepath="$PROJECT_DIR$/cityEase-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-core.iml" filepath="$PROJECT_DIR$/cityEase-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-service.iml" filepath="$PROJECT_DIR$/cityEase-service.iml" />
-      <module fileurl="file://$PROJECT_DIR$/cityEase-ui.iml" filepath="$PROJECT_DIR$/cityEase-ui.iml" />
       <module fileurl="file://$PROJECT_DIR$/cityEase-web.iml" filepath="$PROJECT_DIR$/cityEase-web.iml" />
     </modules>
   </component>

@@ -5,21 +5,24 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-@ApiModel("保存或发布公告请求")
+@ApiModel("Notice save request")
 public class NoticeSaveReq {
 
-    @ApiModelProperty(value = "公告ID (传了表示修改，不传表示新增)")
+    @ApiModelProperty(value = "Notice ID. Null means create, otherwise update.")
     private Long id;
 
-    @ApiModelProperty(value = "公告标题", required = true)
+    @ApiModelProperty(value = "Notice title", required = true)
     private String noticeTitle;
 
-    @ApiModelProperty(value = "公告类型: 1-通知, 2-活动, 3-提示", required = true)
+    @ApiModelProperty(value = "Notice type: 1-notice, 2-activity, 3-tip", required = true)
     private Integer noticeType;
 
-    @ApiModelProperty(value = "公告HTML富文本内容", required = true)
+    @ApiModelProperty(value = "Notice content in HTML", required = true)
     private String noticeContent;
 
-    @ApiModelProperty(value = "是否直接发布: true-直接发布, false-存为草稿", required = true)
+    @ApiModelProperty(value = "Cover image URL")
+    private String coverImage;
+
+    @ApiModelProperty(value = "Whether to publish immediately", required = true)
     private Boolean isPublish;
 }

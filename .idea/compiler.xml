@@ -11,7 +11,6 @@
       <directory url="file://$PROJECT_DIR$/cityEase-api/src/main/resources/archetype-resources" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/cityEase-core/src/main/resources/archetype-resources" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/cityEase-service/src/main/resources/archetype-resources" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/cityEase-ui/src/main/resources/archetype-resources" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/cityEase-web/src/main/resources/archetype-resources" includeSubdirectories="true" />
     </excludeFromCompile>
     <annotationProcessing>
@@ -20,7 +19,6 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="cityEase-ui" />
         <module name="cityEase-web" />
         <module name="cityEase-core" />
         <module name="cityEase-service" />
@@ -41,7 +39,6 @@
       <module name="cityEase-api" options="-parameters" />
       <module name="cityEase-core" options="-parameters" />
       <module name="cityEase-service" options="-parameters" />
-      <module name="cityEase-ui" options="-parameters" />
       <module name="cityEase-web" options="-parameters" />
       <module name="common" options="-parameters" />
       <module name="feign-service" options="-parameters" />
