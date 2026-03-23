@@ -1,13 +1,21 @@
 <template>
-  <router-view />
+  <div class="app-root">
+    <router-view />
+  </div>
 </template>
 
 <style>
-html, body, #app {
+html,
+body,
+#app,
+.app-root {
   margin: 0;
   padding: 0;
-  height: 100%;
   width: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  height: 100%;
+}
+
+.app-root {
+  isolation: isolate;
 }
 </style>

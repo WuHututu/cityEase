@@ -19,10 +19,25 @@ export interface BindAuditRecord {
   createTime?: string
 }
 
-export const pageBindAudit = (data: BindAuditQuery) => request.post('/admin/pms/userRoom/page', data)
+export interface BindAuditDetail extends BindAuditRecord {
+  phone?: string
+  auditId?: number
+  auditorName?: string
+  auditTime?: string
+  remark?: string
+}
 
-export const approveBind = (relId: number) =>
+export const pageBindAudit = (data: BindAuditQuery): Promise<any> =>
+  request.post('/admin/pms/userRoom/page', data)
+
+export const getBindDetail = (relId: number): Promise<BindAuditDetail> =>
+  request.get('/admin/pms/userRoom/detail', { params: { relId } })
+
+export const approveBind = (relId: number): Promise<any> =>
   request.post('/admin/pms/userRoom/audit', { relId, status: 1 })
 
-export const rejectBind = (relId: number, remark: string) =>
+export const rejectBind = (relId: number, remark: string): Promise<any> =>
   request.post('/admin/pms/userRoom/audit', { relId, status: 2, remark })
+
+export const updateBindAttachments = (relId: number, attachments: string[]): Promise<any> =>
+  request.post('/admin/pms/userRoom/attachments', { relId, attachments })

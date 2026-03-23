@@ -40,7 +40,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="170" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="280">
           <template #default="{ row }">
             <el-button size="small" type="primary" plain @click="openEditDialog(row)">编辑</el-button>
             <el-button size="small" type="warning" plain @click="resetPwd(row)">重置密码</el-button>
@@ -53,7 +53,7 @@
 
       <div class="pager">
         <el-pagination v-model:current-page="queryParams.pageNo" v-model:page-size="queryParams.pageSize"
-          :page-sizes="[10, 20, 50, 100]" layout="sizes, prev, pager, next, jumper, ->, total" :total="total"
+          :page-sizes="[10, 20, 50, 100]" background layout="total, sizes, prev, pager, next, jumper" :total="total"
           @size-change="handleSearch" @current-change="fetchData" />
       </div>
     </el-card>

@@ -46,7 +46,6 @@
         <template #header>
           <div class="card-header">
             <span>近 7 日积分趋势</span>
-            <el-tag type="info">发放 / 消耗 / 净变化</el-tag>
           </div>
         </template>
         <div ref="chartRef" class="chart"></div>
@@ -54,29 +53,25 @@
 
       <el-card class="side-card" shadow="hover">
         <template #header>
-          <div class="card-header">
-            <span>缓存状态</span>
-            <div class="cache-actions">
+      <div class="card-header">
+        <span>缓存状态</span>
+        <div class="cache-actions">
               <el-button link type="primary" @click="refreshCache">刷新</el-button>
               <el-button link type="danger" @click="clearCache">清空</el-button>
             </div>
           </div>
         </template>
         <div class="cache-panel">
-          <div class="cache-row">
-            <span>健康状态</span>
-            <el-tag :type="cacheStatus.healthy ? 'success' : 'warning'">
-              {{ cacheStatus.healthy ? '正常' : '待刷新' }}
-            </el-tag>
-          </div>
-          <div class="cache-row">
-            <span>状态详情</span>
-            <span class="muted">{{ cacheStatus.status || '-' }}</span>
-          </div>
-          <div class="cache-row">
-            <span>最后刷新</span>
-            <span class="muted">{{ cacheStatus.lastCheckedAt || '-' }}</span>
-          </div>
+        <div class="cache-row">
+          <span>健康状态</span>
+          <el-tag :type="cacheStatus.healthy ? 'success' : 'warning'">
+            {{ cacheStatus.healthy ? '正常' : '待刷新' }}
+          </el-tag>
+        </div>
+        <div class="cache-row">
+          <span>最后刷新</span>
+          <span class="muted">{{ cacheStatus.lastCheckedAt || '-' }}</span>
+        </div>
         </div>
       </el-card>
     </div>
@@ -85,7 +80,6 @@
       <template #header>
         <div class="card-header">
           <span>最近积分流水</span>
-          <el-tag type="info">最新 10 条</el-tag>
         </div>
       </template>
       <el-table :data="latestLogs" v-loading="logsLoading" border>
@@ -165,10 +159,40 @@ const renderChart = (trend: PointTrendVO) => {
 
   chart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['发放', '消耗', '净变化'] },
-    grid: { left: 24, right: 24, top: 48, bottom: 24, containLabel: true },
-    xAxis: { type: 'category', data: trend.dates || [] },
-    yAxis: { type: 'value' },
+    legend: {
+      top: 10,
+      left: 'center',
+      itemWidth: 14,
+      itemHeight: 10,
+      itemGap: 20,
+      textStyle: {
+        color: '#f8fafc',
+        fontWeight: 600
+      },
+      data: ['发放', '消耗', '净变化']
+    },
+    grid: { left: 28, right: 24, top: 84, bottom: 44, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: trend.dates || [],
+      axisLine: {
+        lineStyle: { color: 'rgba(148, 163, 184, 0.24)' }
+      },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#f8fafc',
+        margin: 16
+      }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: {
+        lineStyle: { color: 'rgba(148, 163, 184, 0.08)' }
+      },
+      axisLabel: {
+        color: '#f8fafc'
+      }
+    },
     series: [
       {
         name: '发放',
@@ -277,8 +301,12 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 20px 24px;
   border-radius: 14px;
-  background: linear-gradient(120deg, rgba(14, 116, 144, 0.95), rgba(15, 23, 42, 0.95));
+  background:
+    linear-gradient(135deg, rgba(8, 15, 27, 0.96), rgba(8, 15, 27, 0.88)),
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 34%),
+    radial-gradient(circle at top right, rgba(6, 182, 212, 0.16), transparent 30%);
   color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .hero-card h2 {
@@ -288,7 +316,7 @@ onBeforeUnmount(() => {
 
 .hero-card p {
   margin: 0;
-  color: rgba(226, 232, 240, 0.82);
+  color: #f8fafc;
 }
 
 .hero-actions {
@@ -352,7 +380,7 @@ onBeforeUnmount(() => {
 }
 
 .chart {
-  height: 300px;
+  height: 320px;
   width: 100%;
 }
 
@@ -369,8 +397,13 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+.cache-row > span:first-child {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
 .muted {
-  color: #64748b;
+  color: #f8fafc;
   text-align: right;
 }
 

@@ -47,7 +47,7 @@
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column prop="updateTime" label="更新时间" min-width="180" />
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column label="操作" width="320">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
             <el-button size="small" @click="openLogs(row.id)">日志</el-button>
@@ -66,7 +66,8 @@
         <el-pagination
           v-model:current-page="query.current"
           :page-size="query.size"
-          layout="prev, pager, next, total"
+          background
+          layout="total, prev, pager, next, jumper"
           :total="total"
           @current-change="fetchList"
         />
@@ -153,7 +154,8 @@
         <el-pagination
           v-model:current-page="logsQuery.current"
           :page-size="logsQuery.size"
-          layout="prev, pager, next, total"
+          background
+          layout="total, prev, pager, next, jumper"
           :total="logsTotal"
           @current-change="fetchLogs"
         />
@@ -388,6 +390,7 @@ fetchList()
 }
 
 .toolbar {
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;

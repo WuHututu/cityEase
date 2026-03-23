@@ -27,7 +27,7 @@
         <el-table-column prop="fullAddress" label="地址" min-width="240" />
         <el-table-column prop="areaName" label="所属区域" min-width="160" />
         <el-table-column prop="createTime" label="创建时间" min-width="170" />
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <el-button size="small" type="primary" plain @click="openEditDialog(row)">编辑</el-button>
             <el-button size="small" type="danger" plain @click="deleteRoom(row)">删除</el-button>
@@ -36,8 +36,14 @@
       </el-table>
 
       <div class="pager">
-        <el-pagination v-model:current-page="queryParams.pageNo" :page-size="queryParams.pageSize"
-          layout="prev, pager, next, jumper, ->, total" :total="total" @current-change="fetchData" />
+        <el-pagination
+          v-model:current-page="queryParams.pageNo"
+          :page-size="queryParams.pageSize"
+          :total="total"
+          background
+          layout="total, prev, pager, next, jumper"
+          @current-change="fetchData"
+        />
       </div>
     </el-card>
 

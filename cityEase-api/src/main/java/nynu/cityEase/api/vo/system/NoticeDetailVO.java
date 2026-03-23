@@ -22,6 +22,9 @@ public class NoticeDetailVO {
     @ApiModelProperty("公告 HTML 富文本正文")
     private String noticeContent;
 
+    @ApiModelProperty("公告封面图")
+    private String coverImage;
+
     @ApiModelProperty("状态：0-草稿，1-已发布")
     private Integer status;
 

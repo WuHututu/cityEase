@@ -19,7 +19,7 @@
           <template #header>
             <div class="panel-header">
               <span>公共区域树</span>
-              <el-button size="small" plain @click="fetchTree">刷新</el-button>
+              <el-button size="small" class="panel-refresh-btn" @click="fetchTree">刷新</el-button>
             </div>
           </template>
 
@@ -29,9 +29,9 @@
               <div class="tree-node">
                 <span class="label">{{ node.label }}</span>
                 <span class="actions">
-                  <el-button size="small" text type="primary" @click.stop="openAddDialog(data)">新增</el-button>
-                  <el-button size="small" text type="warning" @click.stop="openEditDialog(data)">编辑</el-button>
-                  <el-button size="small" text type="danger" @click.stop="deleteArea(data)">删除</el-button>
+                  <el-button size="small" text type="primary" class="node-action" @click.stop="openAddDialog(data)">新增</el-button>
+                  <el-button size="small" text type="warning" class="node-action" @click.stop="openEditDialog(data)">编辑</el-button>
+                  <el-button size="small" text type="danger" class="node-action" @click.stop="deleteArea(data)">删除</el-button>
                 </span>
               </div>
             </template>
@@ -60,7 +60,7 @@
               <el-button type="primary" plain @click="openAddDialog(currentNode)">在此下新增</el-button>
             </div>
           </div>
-          <div v-else style="color:#666">点击左侧树节点查看详情。</div>
+          <div v-else class="empty-hint">点击左侧树节点查看详情。</div>
         </el-card>
       </el-col>
     </el-row>
@@ -318,6 +318,18 @@ onMounted(fetchTree)
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-header span {
+  color: rgba(248, 250, 252, 0.94);
+  font-weight: 600;
+}
+
+.panel-refresh-btn {
+  color: #f8fafc !important;
+  background: rgba(15, 23, 42, 0.84) !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
 }
 
 .tree-node {
@@ -338,6 +350,14 @@ onMounted(fetchTree)
 .actions {
   display: flex;
   gap: 4px;
+}
+
+.node-action {
+  min-width: 0;
+}
+
+.empty-hint {
+  color: rgba(203, 213, 225, 0.74);
 }
 
 /* 修复 descriptions 组件样式 */

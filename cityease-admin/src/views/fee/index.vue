@@ -46,7 +46,7 @@
         <el-table-column prop="payTime" label="支付时间" min-width="160" />
         <el-table-column prop="createTime" label="生成时间" min-width="160" />
 
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column label="操作" width="320">
           <template #default="{ row }">
             <el-button size="small" type="primary" plain @click="openEditDialog(row)">编辑</el-button>
 
@@ -75,7 +75,8 @@
         <el-pagination
           v-model:current-page="queryParams.pageNo"
           :page-size="queryParams.pageSize"
-          layout="prev, pager, next, jumper, ->, total"
+          background
+          layout="total, prev, pager, next, jumper"
           :total="total"
           @current-change="fetchData"
         />

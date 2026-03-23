@@ -33,7 +33,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="updateTime" label="更新时间" width="180" />
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column label="操作" width="240">
         <template #default="{ row }">
           <el-button size="small" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="warning" @click="toggleStatus(row)">
@@ -45,8 +45,14 @@
     </el-table>
 
     <div class="pager">
-      <el-pagination v-model:current-page="query.current" :page-size="query.size" layout="prev, pager, next, total"
-        :total="total" @current-change="fetchList" />
+      <el-pagination
+        v-model:current-page="query.current"
+        :page-size="query.size"
+        :total="total"
+        background
+        layout="total, prev, pager, next, jumper"
+        @current-change="fetchList"
+      />
     </div>
 
     <el-dialog v-model="dialog.visible" :title="dialog.title" width="640px" destroy-on-close>
@@ -212,6 +218,7 @@ const toggleStatus = async (row: any) => {
 }
 
 .toolbar {
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;

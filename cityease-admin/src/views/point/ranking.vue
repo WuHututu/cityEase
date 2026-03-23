@@ -3,7 +3,7 @@
     <div class="toolbar">
       <div class="left">
         <el-radio-group v-model="activeTab">
-          <el-radio-button label="room">房屋排行</el-radio-button>
+          <el-radio-button style="margin-right: 10px" label="room">房屋排行</el-radio-button>
           <el-radio-button label="building">楼栋统计</el-radio-button>
         </el-radio-group>
         <el-button :loading="refreshing" type="primary" @click="refreshCache">刷新缓存</el-button>
@@ -19,7 +19,6 @@
       <template #header>
         <div class="card-header">
           <span>房屋积分排行</span>
-          <el-tag type="info">共 {{ roomSource.length }} 条</el-tag>
         </div>
       </template>
       <el-table :data="roomPageData" v-loading="loading" border>
@@ -42,7 +41,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="updateTime" label="更新时间" min-width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="120">
           <template #default="{ row }">
             <el-button size="small" @click="openRoomDetail(row)">详情</el-button>
           </template>
@@ -52,7 +51,8 @@
         <el-pagination
           v-model:current-page="roomPage"
           :page-size="pageSize"
-          layout="prev, pager, next, total"
+          background
+          layout="total, prev, pager, next, jumper"
           :total="roomSource.length"
         />
       </div>
@@ -62,7 +62,6 @@
       <template #header>
         <div class="card-header">
           <span>楼栋积分统计</span>
-          <el-tag type="info">共 {{ buildingSource.length }} 条</el-tag>
         </div>
       </template>
       <el-table :data="buildingPageData" v-loading="loading" border>
@@ -84,7 +83,7 @@
         </el-table-column>
         <el-table-column prop="maxPoints" label="最高积分" min-width="110" align="right" />
         <el-table-column prop="minPoints" label="最低积分" min-width="110" align="right" />
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="140">
           <template #default="{ row }">
             <el-button size="small" @click="openBuildingRooms(row)">房屋排行</el-button>
           </template>
@@ -94,7 +93,8 @@
         <el-pagination
           v-model:current-page="buildingPage"
           :page-size="pageSize"
-          layout="prev, pager, next, total"
+          background
+          layout="total, prev, pager, next, jumper"
           :total="buildingSource.length"
         />
       </div>
@@ -254,6 +254,7 @@ onMounted(loadData)
 }
 
 .toolbar {
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;

@@ -2,6 +2,7 @@ package nynu.cityEase.service.pms.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -14,6 +15,7 @@ import nynu.cityEase.service.pms.service.IBindAuditService;
 import nynu.cityEase.service.pms.service.entity.BindAuditDO;
 import nynu.cityEase.service.pms.service.mapper.BindAuditMapper;
 import nynu.cityEase.service.user.repository.dao.UserDao;
+import nynu.cityEase.service.user.repository.entity.UserDO;
 import nynu.cityEase.service.user.repository.entity.UserInfoDO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +55,7 @@ public class BindAuditServiceImpl extends ServiceImpl<BindAuditMapper, BindAudit
         for (BindAuditDO doObj : page.getRecords()) {
             BindAuditPageVO vo = new BindAuditPageVO();
             BeanUtils.copyProperties(doObj, vo);
+            vo.setAttachmentsList(parseAttachments(doObj.getAttachments()));
             list.add(vo);
         }
         voPage.setRecords(list);
@@ -92,7 +95,19 @@ public class BindAuditServiceImpl extends ServiceImpl<BindAuditMapper, BindAudit
         }
         BindAuditDetailVO vo = new BindAuditDetailVO();
         BeanUtils.copyProperties(doObj, vo);
+        vo.setAttachmentsList(parseAttachments(doObj.getAttachments()));
         return vo;
+    }
+
+    private List<String> parseAttachments(String attachments) {
+        if (StrUtil.isBlank(attachments)) {
+            return new ArrayList<>();
+        }
+        try {
+            return JSONUtil.toList(attachments, String.class);
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 
     private void fillAuditInfo(BindAuditDO doObj) {
@@ -100,12 +115,15 @@ public class BindAuditServiceImpl extends ServiceImpl<BindAuditMapper, BindAudit
         doObj.setAuditorId(auditorId);
 
         UserInfoDO auditorInfo = userDao.getByUserId(auditorId);
-        if (auditorInfo == null) {
-            doObj.setAuditorName(String.valueOf(auditorId));
-        } else if (StrUtil.isNotBlank(auditorInfo.getRealName())) {
+        UserDO auditorUser = userDao.getUserById(auditorId);
+        if (auditorInfo != null && StrUtil.isNotBlank(auditorInfo.getRealName())) {
             doObj.setAuditorName(auditorInfo.getRealName());
-        } else {
+        } else if (auditorInfo != null && StrUtil.isNotBlank(auditorInfo.getUsername())) {
             doObj.setAuditorName(auditorInfo.getUsername());
+        } else if (auditorUser != null && StrUtil.isNotBlank(auditorUser.getPhone())) {
+            doObj.setAuditorName(auditorUser.getPhone());
+        } else {
+            doObj.setAuditorName(String.valueOf(auditorId));
         }
 
         doObj.setAuditTime(LocalDateTime.now());

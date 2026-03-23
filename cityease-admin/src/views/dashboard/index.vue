@@ -145,6 +145,7 @@ const updatedAt = ref('')
 // 图表相关引用
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+type SeriesTheme = { line: string; areaStart: string; areaEnd: string }
 
 // 初始化 ECharts
 const initChart = (chartData: any = null) => {
@@ -177,12 +178,45 @@ const initChart = (chartData: any = null) => {
       // 兼容大小写不同的字段名
       xAxisData = chartData.xAxisData || chartData.xaxisData;
 
-      seriesData = chartData.series.map((s: any) => ({
+      const resolveSeriesTheme = (name: string, idx: number): SeriesTheme => {
+        if (name.includes('新增')) {
+          return { line: '#22c55e', areaStart: 'rgba(34,197,94,0.20)', areaEnd: 'rgba(34,197,94,0.02)' }
+        }
+        if (name.includes('完成') || name.includes('已完成')) {
+          return { line: '#eab308', areaStart: 'rgba(234,179,8,0.18)', areaEnd: 'rgba(234,179,8,0.02)' }
+        }
+        if (name.includes('处理中') || name.includes('待派发') || name.includes('待处理')) {
+          return { line: '#f97316', areaStart: 'rgba(249,115,22,0.18)', areaEnd: 'rgba(249,115,22,0.02)' }
+        }
+
+        const fallback: [SeriesTheme, SeriesTheme, SeriesTheme] = [
+          { line: '#22c55e', areaStart: 'rgba(34,197,94,0.20)', areaEnd: 'rgba(34,197,94,0.02)' },
+          { line: '#eab308', areaStart: 'rgba(234,179,8,0.18)', areaEnd: 'rgba(234,179,8,0.02)' },
+          { line: '#f97316', areaStart: 'rgba(249,115,22,0.18)', areaEnd: 'rgba(249,115,22,0.02)' }
+        ]
+
+        return fallback[idx % fallback.length] || fallback[0]
+      }
+
+      seriesData = chartData.series.map((s: any, idx: number) => ({
+        ...(() => {
+          const theme = resolveSeriesTheme(s.name, idx)
+          return {
+            lineStyle: { color: theme.line, width: 3 },
+            itemStyle: { color: theme.line },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: theme.areaStart },
+                { offset: 1, color: theme.areaEnd }
+              ])
+            }
+          }
+        })(),
         name: s.name,
         type: 'line',
         smooth: true,
-        data: s.data,
-        // 可按 idx 选色
+        showSymbol: false,
+        data: s.data
       }))
 
     } else {
@@ -193,14 +227,15 @@ const initChart = (chartData: any = null) => {
           name: '新增工单',
           type: 'line',
           smooth: true,
-          lineStyle: { color: '#1890ff', width: 3 },
+          showSymbol: false,
+          lineStyle: { color: '#22c55e', width: 3 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(24,144,255,0.3)' },
-              { offset: 1, color: 'rgba(24,144,255,0.05)' }
+              { offset: 0, color: 'rgba(34,197,94,0.20)' },
+              { offset: 1, color: 'rgba(34,197,94,0.02)' }
             ])
           },
-          itemStyle: { color: '#1890ff' },
+          itemStyle: { color: '#22c55e' },
           data: [0, 0, 0, 0, 0, 0, 0]
         }
       ];
@@ -209,6 +244,9 @@ const initChart = (chartData: any = null) => {
     const option = {
       tooltip: {
         trigger: 'axis',
+        backgroundColor: 'rgba(9, 16, 28, 0.92)',
+        borderColor: 'rgba(148, 163, 184, 0.14)',
+        textStyle: { color: '#f8fafc' },
         formatter: (params: any) => {
           let tipHtml = params[0].axisValue + '<br/>';
           params.forEach((param: any) => {
@@ -217,27 +255,29 @@ const initChart = (chartData: any = null) => {
           return tipHtml;
         }
       },
-      grid: { top: '15%', left: '3%', right: '4%', bottom: '3%', containLabel: true },
+      grid: { top: 68, left: 18, right: 16, bottom: 34, containLabel: true },
       xAxis: {
         type: 'category',
         boundaryGap: true,
         data: xAxisData,
-        axisLine: { lineStyle: { color: '#64748b' } },
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+        axisTick: { show: false },
         axisLabel: {
-          color: '#94a3b8',
-          margin: 15
+          color: 'rgba(203, 213, 225, 0.72)',
+          margin: 14,
+          hideOverlap: true
         }
       },
       yAxis: {
         type: 'value',
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-        axisLabel: { color: '#94a3b8' }
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,0.08)' } },
+        axisLabel: { color: 'rgba(203, 213, 225, 0.72)' }
       },
       legend: {
-        top: '0%',
+        top: 8,
         boundaryGap: true,
         data: seriesData.map((s: any) => s.name),
-        textStyle: { color: '#94a3b8' }
+        textStyle: { color: 'rgba(226, 232, 240, 0.72)' }
       },
       series: seriesData
     };
@@ -335,89 +375,103 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .dashboard-container {
-  color: #e2e8f0;
   position: relative;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .refresh-mask {
   position: absolute;
   z-index: 8;
-  right: 16px;
-  top: 16px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(24, 144, 255, 0.4);
-  color: #93c5fd;
+  right: 18px;
+  top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(12, 18, 30, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: rgba(226, 232, 240, 0.82);
   font-size: 12px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(14px);
 }
 
 .welcome-box {
-  margin-bottom: 24px;
+  padding: 28px 30px;
+  border-radius: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: linear-gradient(180deg, rgba(14, 20, 32, 0.74), rgba(9, 15, 26, 0.64));
+  box-shadow: 0 22px 56px rgba(1, 8, 18, 0.22);
+  backdrop-filter: blur(18px);
 
   h2 {
     margin: 0 0 8px 0;
-    font-size: 24px;
+    font-size: 30px;
     font-weight: 600;
-    color: #fff;
+    color: #f8fafc;
+    line-height: 1.08;
 
     .subtitle {
-      font-size: 14px;
-      color: #1890ff;
+      font-size: 13px;
+      color: rgba(203, 213, 225, 0.68);
       margin-left: 10px;
       font-weight: normal;
-      letter-spacing: 1px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
   }
 
   p {
     margin: 0;
-    color: #94a3b8;
+    color: rgba(226, 232, 240, 0.72);
     font-size: 14px;
+    line-height: 1.7;
   }
 
   .ops {
-    margin-top: 10px;
+    margin-top: 18px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
   }
 
   .update-time {
     font-size: 12px;
-    color: #64748b;
+    color: rgba(203, 213, 225, 0.68);
   }
 }
 
 .kpi-row {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .kpi-card {
   display: flex;
   align-items: center;
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(14, 20, 32, 0.74), rgba(9, 15, 26, 0.64));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 24px;
   padding: 24px 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 18px 44px rgba(1, 8, 18, 0.18);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 
   &:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
+    border-color: rgba(148, 163, 184, 0.24);
   }
 
   .icon-wrapper {
     width: 56px;
     height: 56px;
-    border-radius: 12px;
+    border-radius: 18px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 28px;
     margin-right: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
   }
 
   .info {
@@ -425,22 +479,22 @@ onBeforeUnmount(() => {
 
     .label {
       font-size: 14px;
-      color: #94a3b8;
+      color: rgba(203, 213, 225, 0.72);
       margin-bottom: 8px;
     }
 
     .value {
-      color: #fff;
+      color: #f8fafc;
 
       .num {
         font-size: 28px;
         font-weight: bold;
-        font-family: 'Din', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: var(--admin-font-mono);
       }
 
       .unit {
         font-size: 12px;
-        color: #64748b;
+        color: rgba(203, 213, 225, 0.64);
         margin-left: 4px;
       }
     }
@@ -449,34 +503,34 @@ onBeforeUnmount(() => {
 
 .tech-blue {
   &:hover {
-    box-shadow: 0 10px 20px rgba(24, 144, 255, 0.15);
+    box-shadow: 0 20px 44px rgba(34, 197, 94, 0.12);
   }
 
   .icon-wrapper {
-    background: rgba(24, 144, 255, 0.1);
-    color: #1890ff;
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
   }
 }
 
 .mint-green {
   &:hover {
-    box-shadow: 0 10px 20px rgba(0, 185, 107, 0.15);
+    box-shadow: 0 20px 44px rgba(234, 179, 8, 0.12);
   }
 
   .icon-wrapper {
-    background: rgba(0, 185, 107, 0.1);
-    color: #00B96B;
+    background: rgba(234, 179, 8, 0.12);
+    color: #eab308;
   }
 }
 
 .warning-orange {
   &:hover {
-    box-shadow: 0 10px 20px rgba(250, 140, 22, 0.15);
+    box-shadow: 0 20px 44px rgba(249, 115, 22, 0.12);
   }
 
   .icon-wrapper {
-    background: rgba(250, 140, 22, 0.1);
-    color: #FA8C16;
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
   }
 }
 
@@ -514,19 +568,21 @@ onBeforeUnmount(() => {
 }
 
 .chart-card {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(14, 20, 32, 0.72), rgba(9, 15, 26, 0.62));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 24px;
   padding: 20px;
   height: 350px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 18px 44px rgba(1, 8, 18, 0.18);
+  backdrop-filter: blur(16px);
 
   .card-header {
     font-size: 16px;
-    font-weight: 500;
-    color: #e2e8f0;
-    margin-bottom: 20px;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 18px;
   }
 
   .notice-info {
@@ -539,14 +595,14 @@ onBeforeUnmount(() => {
     .big-num {
       font-size: 72px;
       font-weight: bold;
-      color: #1890ff;
-      background: linear-gradient(135deg, #1890ff, #00f0ff);
+      color: #f8fafc;
+      background: linear-gradient(135deg, #67e8f9 0%, #38bdf8 48%, #2563eb 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     p {
-      color: #94a3b8;
+      color: rgba(203, 213, 225, 0.7);
       margin-top: 10px;
     }
   }
@@ -555,7 +611,7 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: space-around;
     padding: 15px 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
     margin-top: 10px;
 
     .stat-item {
@@ -564,7 +620,7 @@ onBeforeUnmount(() => {
       gap: 5px;
 
       .label {
-        color: #94a3b8;
+        color: rgba(203, 213, 225, 0.7);
         font-size: 13px;
       }
 
@@ -573,18 +629,24 @@ onBeforeUnmount(() => {
         font-weight: 600;
 
         &.today {
-          color: #52c41a;
+          color: #22c55e;
         }
 
         &.week {
-          color: #1890ff;
+          color: #eab308;
         }
 
         &.top {
-          color: #fa8c16;
+          color: #f97316;
         }
       }
     }
+  }
+}
+
+@media (max-width: 960px) {
+  .welcome-box {
+    padding: 24px 20px;
   }
 }
 </style>

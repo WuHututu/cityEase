@@ -85,7 +85,7 @@
 
         <el-table-column prop="createTime" label="报修时间" width="180" />
 
-        <el-table-column label="操作" width="260" fixed="right" align="center">
+        <el-table-column label="操作" width="260" align="center">
           <template #default="scope">
             <el-button v-if="scope.row.status === 0" size="small" type="primary" plain
               @click="openDispatchDialog(scope.row)">
@@ -112,8 +112,14 @@
 
       <!-- 分页组件 -->
       <div class="pagination-container">
-        <el-pagination v-model:current-page="queryParams.pageNo" :page-size="queryParams.pageSize" :background="true"
-          layout="prev, pager, jumper, next, ->, total" :total="total" @current-change="fetchData" />
+        <el-pagination
+          v-model:current-page="queryParams.pageNo"
+          :page-size="queryParams.pageSize"
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          @current-change="fetchData"
+        />
       </div>
     </div>
 
@@ -228,7 +234,7 @@
             </el-button>
           </el-upload>
         </div>
-        <div class="form-tip">最多可上传 5 张图片，支持 jpg、png、gif 格式，单张不超过 5MB</div>
+        <div class="form-tip">最多可上传 5 张图片，支持 jpg、png、gif 格式，单张不超过 1048576 bytes</div>
       </el-form-item>
     </el-form>
 
@@ -503,14 +509,14 @@ const closeCompleteDialog = () => {
 // 图片上传相关方法
 const beforeImageUpload = (file: File) => {
   const isImage = file.type.startsWith('image/')
-  const isLt5M = file.size / 1024 / 1024 < 5
+  const isLt5M = file.size <= 1048576
 
   if (!isImage) {
     ElMessage.error('只能上传图片文件！')
     return false
   }
   if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB！')
+    ElMessage.error('图片大小不能超过 1048576 bytes')
     return false
   }
   return true
@@ -665,7 +671,7 @@ onMounted(() => {
     /* 修复固定列顶部的表头背景 */
     th.el-table__fixed-right,
     th.el-table__fixed-left {
-      background-color: #161e2c !important;
+      background-color: #0E1628 !important;
     }
 
 
@@ -674,7 +680,7 @@ onMounted(() => {
     --el-table-row-hover-bg-color: rgba(24, 144, 255, 0.1);
 
     th.el-table__cell {
-      background-color: rgba(15, 23, 42, 0.8) !important;
+      background-color: #0E1628 !important;
       color: #cbd5e1;
       font-weight: 600;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -695,22 +701,6 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: center;
-
-    :deep(.el-pagination.is-background .el-pager li) {
-      background-color: rgba(15, 23, 42, 0.6);
-      color: #94a3b8;
-    }
-
-    :deep(.el-pagination.is-background .el-pager li.is-active) {
-      background-color: #1890ff;
-      color: #fff;
-    }
-
-    :deep(.el-pagination.is-background .btn-next),
-    :deep(.el-pagination.is-background .btn-prev) {
-      background-color: rgba(15, 23, 42, 0.6);
-      color: #94a3b8;
-    }
   }
 }
 
