@@ -29,6 +29,10 @@ security:
 spring:
   config:
     import: application-dal.yml,application-login.yml
+  servlet:
+    multipart:
+      max-file-size: 1048576B
+      max-request-size: 1048576B
   redis:
     host: 192.168.200.147
     port: 6379
@@ -82,3 +86,4 @@ upload:
   type: aliyun  # 上传类型：local-本地存储，aliyun-阿里云 OSS
   path: ${user.dir}/uploads/images/
   url-prefix: /uploads/images/
+  max-file-size-bytes: 1048576
